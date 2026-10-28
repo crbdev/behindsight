@@ -189,18 +189,19 @@ function contentStrategyPanel() {
     for (const c of labels.values()) if (c[key]) t[c[key]] = (t[c[key]] || 0) + 1;
     return Object.entries(t).sort((a, b) => b[1] - a[1]);
   };
-  const chipsFor = (key, label) => { const t = tally(key); return t.length ? `<div class="chips"><span class="weak mono">${label}</span>${t.map(([k, n]) => `<span class="stat">${esc(k)} <b>${n}</b></span>`).join('')}</div>` : ''; };
-  parts.push(chipsFor('format', 'Formats') + chipsFor('stage', 'Funnel stage') + chipsFor('topic', 'Topics'));
+  // Topics only count when several posts share one; one-off topics are noise next to the claims.
+  const chipsFor = (key, label, min = 1) => { const t = tally(key).filter(([, n]) => n >= min); return t.length ? `<div class="chips"><span class="weak mono">${label}</span>${t.map(([k, n]) => `<span class="stat">${esc(k)} <b>${n}</b></span>`).join('')}</div>` : ''; };
+  parts.push(chipsFor('format', 'Formats') + chipsFor('stage', 'Funnel stage') + chipsFor('topic', 'Shared topics', 2));
   const cad = contentData.cadence || [];
   if (cad.length >= 2) {
     const max = Math.max(...cad.map((m) => m.count));
-    parts.push(`<h3>Sampled posts by publish month</h3><p class="note">Counts within the sample only, not total output.</p><div class="bars">${cad.slice(-12).map((m) => `<div class="bar-row"><span class="label">${esc(m.month)}</span><div class="bar-track"><div class="bar-fill" style="width:${((m.count / max) * 100).toFixed(1)}%"></div></div><span class="value">${m.count}</span></div>`).join('')}</div>`);
+    parts.push(`<h3>Recent posts by publish month</h3><p class="note">The recent sample only, not total output.</p><div class="bars">${cad.slice(-12).map((m) => `<div class="bar-row"><span class="label">${esc(m.month)}</span><div class="bar-track"><div class="bar-fill" style="width:${((m.count / max) * 100).toFixed(1)}%"></div></div><span class="value">${m.count}</span></div>`).join('')}</div>`);
   }
   const rows = ok.map((p) => {
     const c = labels.get(norm(p.url)) || {};
     return `<tr><td class="mono weak">${esc(p.published || '?')}</td><td>${link(p.url, p.title || p.url)}${p.reason === 'top traffic' || p.reason === 'recent and top traffic' ? ' <span class="chip src">top traffic</span>' : ''}</td><td>${esc(c.format || '')}</td><td>${esc(c.stage || '')}</td><td>${esc(c.cta || (p.leadForms?.length ? 'lead form' : p.ctas?.[0] || ''))}</td><td class="num">${fmt(p.words)}</td><td class="num">${p.etv ? fmt(p.etv) : ''}</td></tr>`;
   }).join('');
-  parts.push(`<h3>Posts read</h3><div class="table-wrap"><table><thead><tr><th>Published</th><th>Post</th><th>Format</th><th>Stage</th><th>Asks readers to</th><th class="num">Words</th><th class="num">Est. visits</th></tr></thead><tbody>${rows}</tbody></table></div>`);
+  parts.push(`<details><summary>Posts read (${ok.length})</summary><div class="table-wrap"><table><thead><tr><th>Published</th><th>Post</th><th>Format</th><th>Stage</th><th>Asks readers to</th><th class="num">Words</th><th class="num">Est. visits</th></tr></thead><tbody>${rows}</tbody></table></div></details>`);
   return parts.join('');
 }
 

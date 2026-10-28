@@ -45,7 +45,7 @@ Read in this order:
 
 1. `summary.md`: the digest. Pages, CTAs, the merged stack, IDs, events, unidentified hosts, sitemap stats, ad library results and, when collected, search data.
 2. `ads/*.jpg`: look at the ad samples and library screenshots. They show messaging the digest can't.
-3. `content/*.md`: the sampled blog and article posts (the newest, plus the top search-traffic posts). Read the top-traffic posts and at least 5 recent ones in full, and skim the rest. For each, note its topic, format (how-to, listicle, comparison, case study, news or announcement, thought leadership, product update, template or tool), funnel stage (awareness, consideration, decision, retention) and what it asks the reader to do.
+3. `content/*.md`: the sampled blog and article posts (the newest, plus the top search-traffic posts). Read the top-traffic posts and at least 5 recent ones in full, and skim the rest. For each, note its topic, format (how-to, listicle, comparison, case study, original research, news or announcement, thought leadership, product update, template or tool), funnel stage (awareness, consideration, decision, retention) and what it asks the reader to do.
 4. `pages/*.md`: full page text. Always read the homepage and pricing pages in full. Skim the rest.
 5. `collected.json`: when you need detail the digest drops (JSON-LD offers, form fields, every CTA).
 

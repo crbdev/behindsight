@@ -90,7 +90,14 @@ export async function collectContent({ context, origin, siteRoot, homePage, site
     await sleep(1500);
   }
   posts.sort((a, b) => String(b.published || '').localeCompare(String(a.published || '')));
-  return { source, feed: feed ? feed.url : null, posts, listingPagesSkipped: listings };
+  // The whole feed, not just the sample: its size and the categories it uses.
+  const feedSummary = feed ? (() => {
+    const cats = {};
+    for (const i of feed.items) for (const c of i.categories || []) cats[c] = (cats[c] || 0) + 1;
+    const dates = feed.items.map((i) => i.date).filter(Boolean).sort();
+    return { items: feed.items.length, oldest: dates[0] || null, newest: dates.at(-1) || null, categories: Object.entries(cats).sort((a, b) => b[1] - a[1]).slice(0, 20).map(([name, count]) => ({ name, count })) };
+  })() : null;
+  return { source, feed: feed ? feed.url : null, feedSummary, posts, listingPagesSkipped: listings };
 }
 
 export async function savePosts(content, outDir, slugify) {
@@ -98,7 +105,7 @@ export async function savePosts(content, outDir, slugify) {
   for (const p of content.posts) {
     if (!p.text) continue;
     p.file = `content/${slugify(p.url)}.md`;
-    const head = [`# ${p.title || p.feedTitle || p.url}`, '', `URL: ${p.url}`, `Published: ${p.published || 'unknown'} (${p.dateSource || 'no date found'})`, `Author: ${p.author || 'unknown'}`, `Words: ${p.words}`, `Sampled because: ${p.reason}${p.etv ? ` (~${p.etv} est. monthly search visits)` : ''}`, ''];
+    const head = [`# ${p.title || p.feedTitle || p.url}`, '', `URL: ${p.url}`, `Published: ${p.published || 'unknown'} (${p.dateSource || 'no date found'})`, `Author: ${p.author || 'unknown'}`, `Words: ${p.words}${p.truncated ? ' (text cut off at 40,000 characters)' : ''}`, `Sampled because: ${p.reason}${p.etv ? ` (~${p.etv} est. monthly search visits)` : ''}`, ''];
     await writeFile(path.join(outDir, p.file), head.join('\n') + p.text);
     delete p.text;
   }
@@ -106,7 +113,8 @@ export async function savePosts(content, outDir, slugify) {
 
 // Posts per month from real publish dates, last 12 months.
 export function cadence(content) {
-  const dated = content.posts.filter((p) => p.published && p.dateSource !== 'sitemap lastmod');
+  // Only the recent sample: top-traffic posts are old by design and would stretch the timeline.
+  const dated = content.posts.filter((p) => p.published && p.dateSource !== 'sitemap lastmod' && /recent/.test(p.reason || ''));
   const byMonth = {};
   for (const p of dated) byMonth[p.published.slice(0, 7)] = (byMonth[p.published.slice(0, 7)] || 0) + 1;
   return Object.entries(byMonth).sort().map(([month, count]) => ({ month, count }));
@@ -191,7 +199,8 @@ async function readPost(context, url) {
         ctas: [...body.querySelectorAll('a, button')].map((el) => clean(el.innerText)).filter((t) => t && t.length <= 60 && /(start|try|get started|sign ?up|book|demo|download|subscribe|join|request|free|trial|watch|register|get the|get your)/i.test(t)).filter((t, i, arr) => arr.indexOf(t) === i).slice(0, 10),
         forms: [...body.querySelectorAll('form')].map((f) => [...f.querySelectorAll('input, select, textarea')].filter((i) => i.type !== 'hidden' && i.type !== 'submit').map((i) => i.name || i.type)).filter((f) => f.length).slice(0, 4),
         links,
-        text: text.slice(0, 15000)
+        text: text.slice(0, 40000),
+        truncated: text.length > 40000
       };
     });
     await page.close();
@@ -214,7 +223,8 @@ async function readPost(context, url) {
       productLinks,
       internalLinks: own.length,
       contentLinks,
-      text: data.text
+      text: data.text,
+      truncated: data.truncated || undefined
     };
   } catch (e) {
     await page.close().catch(() => {});

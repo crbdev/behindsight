@@ -75,7 +75,7 @@ For e-commerce companies, at-a-glance labels like Offer, Price range, Shipping a
 
 ## content_posts
 
-One entry per sampled post in `content/`. `format` is one of: how-to, listicle, comparison, case study, news or announcement, thought leadership, product update, template or tool, other. `stage` is awareness, consideration, decision or retention. `cta` is the main thing the post asks the reader to do, in a few words ("free trial", "book a demo", "download the guide", "none"). The report tallies these and shows them per post.
+One entry per sampled post in `content/`. `format` is one of: how-to, listicle, comparison, case study, original research, news or announcement, thought leadership, product update, template or tool, other. `stage` is awareness, consideration, decision or retention. `cta` is the main thing the post asks the reader to do, in a few words ("free trial", "book a demo", "download the guide", "none"). The report tallies these and shows them per post.
 
 ## At a glance
 

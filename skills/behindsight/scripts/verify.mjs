@@ -163,9 +163,10 @@ function checkEvidence(e) {
       const posts = collected.content?.posts || [];
       const post = posts.find((x) => normUrl(x.url) === normUrl(ref));
       if (!post) {
-        if (!/sample|posts|content/i.test(ref)) problems.push(`post ${ref} isn't in the content sample`);
-        const { hard } = splitPercent(unmatchedNumbers(detail, collected.content || {}), detail);
-        if (hard.length) problems.push(`content numbers don't match: ${hard.join(', ')}`);
+        if (!/sample|posts|content|feed/i.test(ref)) problems.push(`post ${ref} isn't in the content sample`);
+        // Sample-level figures are usually tallies across posts, so a missing number is a warning.
+        const missing = unmatchedNumbers(detail, collected.content || {});
+        if (missing.length) warnings.push(`content numbers not in the data (tallies should show their working): ${missing.join(', ')}`);
         break;
       }
       let text = loose(JSON.stringify(post));

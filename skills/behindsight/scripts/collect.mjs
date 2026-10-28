@@ -654,6 +654,7 @@ function contentSummary(ct) {
   if (!ct.posts.length) return ['## Content sample', '', `No blog or article content found${ct.error ? ` (${ct.error})` : ''}.`, ''];
   const ok = ct.posts.filter((p) => !p.error);
   const L = ['## Content sample', '', `${ok.length} posts read (source: ${ct.source === 'feed' ? `feed ${ct.feed}` : 'sitemap, so dates are last-modified, not published'}). Full text in content/.`];
+  if (ct.feedSummary) L.push(`- The feed lists ${ct.feedSummary.items} posts (${ct.feedSummary.oldest} to ${ct.feedSummary.newest})${ct.feedSummary.categories.length ? `; categories: ${ct.feedSummary.categories.map((c) => `${c.name} (${c.count})`).join(', ')}` : ''}`);
   if (ct.cadence?.length) L.push(`- Posts per month by publish date (sample only): ${ct.cadence.map((m) => `${m.month}: ${m.count}`).join(', ')}`);
   const authors = {};
   for (const p of ok) if (p.author) authors[p.author] = (authors[p.author] || 0) + 1;
