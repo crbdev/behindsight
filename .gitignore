@@ -1,0 +1,5 @@
+node_modules/
+vendor/
+teardowns/
+.DS_Store
+.env

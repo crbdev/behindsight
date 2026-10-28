@@ -1,0 +1,1904 @@
+{
+  "_about": "Network signatures for marketing vendors. A request matches when its host equals or ends with a listed host (and its path matches the rule's path regex, when given). `aliases` are Wappalyzer technology names, used to merge both sources into one stack entry. `ids` extract public account IDs from request URLs (capture group 1). Contributions welcome: keep one vendor per entry and categories aligned with Wappalyzer's names where one exists. `first_party_tagging` patterns only apply to the company's own domains. `urlPattern` matches a request's path and `queryPattern` its query string, for tools served from the company's own domain.",
+  "vendors": [
+    {
+      "name": "Google Tag Manager",
+      "category": "Tag managers",
+      "rules": [
+        {
+          "host": "googletagmanager.com",
+          "path": "^/gtm\\.js"
+        }
+      ],
+      "aliases": [
+        "Google Tag Manager"
+      ],
+      "ids": [
+        {
+          "label": "GTM container",
+          "pattern": "[?&]id=(GTM-[A-Z0-9]+)"
+        }
+      ]
+    },
+    {
+      "name": "Google tag (gtag.js)",
+      "category": "Tag managers",
+      "rules": [
+        {
+          "host": "googletagmanager.com",
+          "path": "^/gtag/"
+        }
+      ],
+      "aliases": [],
+      "ids": [
+        {
+          "label": "Google tag",
+          "pattern": "[?&]id=((?:G|AW|DC|GT)-[A-Z0-9]+)"
+        }
+      ]
+    },
+    {
+      "name": "Google Analytics",
+      "category": "Analytics",
+      "hosts": [
+        "google-analytics.com",
+        "analytics.google.com"
+      ],
+      "rules": [
+        {
+          "host": "google.com",
+          "path": "^/g/collect"
+        },
+        {
+          "host": "*",
+          "path": "^/g/collect"
+        }
+      ],
+      "aliases": [
+        "Google Analytics",
+        "Google Analytics 4",
+        "GA4"
+      ],
+      "ids": [
+        {
+          "label": "GA4 property",
+          "pattern": "[?&]tid=(G-[A-Z0-9]+)"
+        }
+      ]
+    },
+    {
+      "name": "Google Ads",
+      "category": "Advertising",
+      "hosts": [
+        "googleadservices.com",
+        "googlesyndication.com"
+      ],
+      "rules": [
+        {
+          "host": "ad.doubleclick.net",
+          "path": "^/ccm/"
+        },
+        {
+          "host": "googleads.g.doubleclick.net",
+          "path": ".*"
+        },
+        {
+          "host": "stats.g.doubleclick.net",
+          "path": ".*"
+        },
+        {
+          "host": "google.com",
+          "path": "^/(pagead|ccm|ads|gmp|rmkt)/"
+        },
+        {
+          "hostPattern": "^(www\\.)?google\\.(com?\\.)?[a-z]{2}$",
+          "path": "^/(pagead|ads|ccm)/"
+        }
+      ],
+      "aliases": [
+        "Google Ads",
+        "Google Ads Conversion Tracking",
+        "Google AdSense"
+      ],
+      "ids": [
+        {
+          "label": "Google Ads account",
+          "pattern": "/(?:viewthroughconversion|conversion)/(\\d{6,})",
+          "prefix": "AW-"
+        },
+        {
+          "label": "Google tag",
+          "pattern": "[?&]id=(AW-[0-9]+)"
+        }
+      ]
+    },
+    {
+      "name": "Google Campaign Manager / Floodlight",
+      "category": "Advertising",
+      "hosts": [
+        "fls.doubleclick.net"
+      ],
+      "aliases": [
+        "DoubleClick Floodlight",
+        "DoubleClick Campaign Manager (DCM)"
+      ],
+      "ids": [
+        {
+          "label": "Floodlight advertiser",
+          "pattern": "src=(\\d+)"
+        }
+      ],
+      "rules": [
+        {
+          "host": "ad.doubleclick.net",
+          "path": "^/activityi?[;/]"
+        }
+      ]
+    },
+    {
+      "name": "Meta Pixel",
+      "category": "Advertising",
+      "hosts": [
+        "connect.facebook.net"
+      ],
+      "rules": [
+        {
+          "host": "facebook.com",
+          "path": "^/tr"
+        }
+      ],
+      "aliases": [
+        "Facebook Pixel",
+        "Meta Pixel"
+      ],
+      "ids": [
+        {
+          "label": "Meta pixel",
+          "pattern": "facebook\\.com/tr/?\\?(?:.*&)?id=(\\d+)"
+        },
+        {
+          "label": "Meta pixel",
+          "pattern": "/signals/config/(\\d+)"
+        }
+      ]
+    },
+    {
+      "name": "LinkedIn Insight Tag",
+      "category": "Advertising",
+      "hosts": [
+        "snap.licdn.com",
+        "px.ads.linkedin.com"
+      ],
+      "aliases": [
+        "LinkedIn Insight Tag",
+        "LinkedIn Ads"
+      ],
+      "ids": [
+        {
+          "label": "LinkedIn partner",
+          "pattern": "[?&]pid=(\\d+)"
+        }
+      ],
+      "rules": [
+        {
+          "host": "linkedin.com",
+          "path": "^/px/"
+        }
+      ]
+    },
+    {
+      "name": "X (Twitter) Pixel",
+      "category": "Advertising",
+      "hosts": [
+        "static.ads-twitter.com",
+        "analytics.twitter.com",
+        "ads-twitter.com"
+      ],
+      "rules": [
+        {
+          "host": "t.co",
+          "path": "^/(1/)?i/adsct"
+        }
+      ],
+      "aliases": [
+        "Twitter Ads",
+        "X Ads",
+        "Twitter Analytics"
+      ],
+      "ids": [
+        {
+          "label": "X pixel",
+          "pattern": "[?&]txn_id=([a-z0-9]+)"
+        }
+      ]
+    },
+    {
+      "name": "TikTok Pixel",
+      "category": "Advertising",
+      "hosts": [
+        "analytics.tiktok.com",
+        "tiktokw.us"
+      ],
+      "aliases": [
+        "TikTok Pixel"
+      ],
+      "ids": [
+        {
+          "label": "TikTok pixel",
+          "pattern": "[?&]sdkid=([A-Z0-9]+)"
+        }
+      ]
+    },
+    {
+      "name": "Reddit Pixel",
+      "category": "Advertising",
+      "hosts": [
+        "alb.reddit.com",
+        "pixel-config.reddit.com"
+      ],
+      "rules": [
+        {
+          "host": "redditstatic.com",
+          "path": "^/ads/"
+        }
+      ],
+      "aliases": [
+        "Reddit Ads",
+        "Reddit Pixel"
+      ],
+      "ids": [
+        {
+          "label": "Reddit pixel",
+          "pattern": "[?&]id=((?:t2|a2)_[a-z0-9]+)"
+        }
+      ]
+    },
+    {
+      "name": "Pinterest Tag",
+      "category": "Advertising",
+      "hosts": [
+        "ct.pinterest.com"
+      ],
+      "rules": [
+        {
+          "host": "s.pinimg.com",
+          "path": "^/ct/"
+        }
+      ],
+      "aliases": [
+        "Pinterest Conversion Tag",
+        "Pinterest Ads"
+      ],
+      "ids": [
+        {
+          "label": "Pinterest tag",
+          "pattern": "[?&]tid=(\\d+)"
+        }
+      ]
+    },
+    {
+      "name": "Snap Pixel",
+      "category": "Advertising",
+      "hosts": [
+        "tr.snapchat.com",
+        "sc-static.net"
+      ],
+      "aliases": [
+        "Snap Pixel",
+        "Snapchat Ads"
+      ]
+    },
+    {
+      "name": "Microsoft Advertising (UET)",
+      "category": "Advertising",
+      "hosts": [
+        "bat.bing.com",
+        "bat.bing.net"
+      ],
+      "aliases": [
+        "Microsoft Advertising",
+        "Bing Ads"
+      ],
+      "ids": [
+        {
+          "label": "UET tag",
+          "pattern": "[?&]ti=(\\d+)"
+        }
+      ]
+    },
+    {
+      "name": "Quora Pixel",
+      "category": "Advertising",
+      "hosts": [
+        "q.quora.com"
+      ],
+      "rules": [
+        {
+          "host": "a.quora.com",
+          "path": "^/qevents"
+        }
+      ],
+      "aliases": [
+        "Quora Pixel"
+      ]
+    },
+    {
+      "name": "OpenAI Ads pixel",
+      "category": "Advertising",
+      "hosts": [
+        "bzr.openai.com",
+        "bzrcdn.openai.com"
+      ],
+      "aliases": [],
+      "ids": [
+        {
+          "label": "OpenAI Ads pixel",
+          "pattern": "[?&]pid=([A-Za-z0-9]{8,})"
+        }
+      ]
+    },
+    {
+      "name": "CHEQ",
+      "category": "Security",
+      "hosts": [
+        "cheq.ai",
+        "cheqzone.com"
+      ],
+      "urlPattern": "/cheq[-_./]|cheq-ppc",
+      "aliases": [
+        "CHEQ"
+      ]
+    },
+    {
+      "name": "Criteo",
+      "category": "Retargeting",
+      "hosts": [
+        "criteo.net",
+        "criteo.com"
+      ],
+      "aliases": [
+        "Criteo"
+      ]
+    },
+    {
+      "name": "AdRoll",
+      "category": "Retargeting",
+      "hosts": [
+        "adroll.com"
+      ],
+      "aliases": [
+        "AdRoll"
+      ]
+    },
+    {
+      "name": "StackAdapt",
+      "category": "Advertising",
+      "hosts": [
+        "srv.stackadapt.com"
+      ],
+      "aliases": [
+        "StackAdapt"
+      ]
+    },
+    {
+      "name": "The Trade Desk",
+      "category": "Advertising",
+      "hosts": [
+        "adsrvr.org"
+      ],
+      "aliases": [
+        "The Trade Desk"
+      ]
+    },
+    {
+      "name": "Amazon Ads",
+      "category": "Advertising",
+      "hosts": [
+        "amazon-adsystem.com"
+      ],
+      "aliases": [
+        "Amazon Advertising"
+      ]
+    },
+    {
+      "name": "Yahoo! JAPAN Ads",
+      "category": "Advertising",
+      "hosts": [
+        "b99.yahoo.co.jp"
+      ],
+      "rules": [
+        {
+          "host": "s.yimg.jp",
+          "path": "^/images/listing/tool/"
+        }
+      ],
+      "aliases": [
+        "Yahoo! JAPAN Ads"
+      ]
+    },
+    {
+      "name": "Programmatic ad exchanges (cookie sync)",
+      "category": "Advertising",
+      "hosts": [
+        "adnxs.com",
+        "bidswitch.net",
+        "casalemedia.com",
+        "rubiconproject.com",
+        "pubmatic.com",
+        "openx.net",
+        "3lift.com",
+        "rlcdn.com",
+        "crwdcntrl.net",
+        "agkn.com",
+        "bluekai.com",
+        "mathtag.com",
+        "everesttech.net",
+        "cm.g.doubleclick.net",
+        "tremorhub.com",
+        "adxcel-ec2.com"
+      ],
+      "aliases": []
+    },
+    {
+      "name": "Taboola",
+      "category": "Advertising",
+      "hosts": [
+        "taboola.com"
+      ],
+      "aliases": [
+        "Taboola"
+      ]
+    },
+    {
+      "name": "Outbrain",
+      "category": "Advertising",
+      "hosts": [
+        "outbrain.com"
+      ],
+      "aliases": [
+        "Outbrain"
+      ]
+    },
+    {
+      "name": "Yahoo Ads",
+      "category": "Advertising",
+      "hosts": [
+        "sp.analytics.yahoo.com"
+      ],
+      "aliases": [
+        "Yahoo Advertising"
+      ]
+    },
+    {
+      "name": "Adobe Experience Platform Tags",
+      "category": "Tag managers",
+      "hosts": [
+        "assets.adobedtm.com"
+      ],
+      "aliases": [
+        "Adobe DTM",
+        "Adobe Experience Platform Launch"
+      ]
+    },
+    {
+      "name": "Adobe Analytics",
+      "category": "Analytics",
+      "hosts": [
+        "omtrdc.net",
+        "2o7.net"
+      ],
+      "aliases": [
+        "Adobe Analytics"
+      ]
+    },
+    {
+      "name": "Adobe Audience Manager",
+      "category": "Advertising",
+      "hosts": [
+        "demdex.net"
+      ],
+      "aliases": [
+        "Adobe Audience Manager"
+      ]
+    },
+    {
+      "name": "Tealium",
+      "category": "Tag managers",
+      "hosts": [
+        "tiqcdn.com",
+        "tealiumiq.com"
+      ],
+      "aliases": [
+        "Tealium"
+      ]
+    },
+    {
+      "name": "Segment",
+      "category": "Customer data platform",
+      "hosts": [
+        "cdn.segment.com",
+        "api.segment.io",
+        "cdn.segment.io"
+      ],
+      "aliases": [
+        "Segment"
+      ],
+      "ids": [
+        {
+          "label": "Segment source",
+          "pattern": "/analytics\\.js/v1/([A-Za-z0-9]+)/"
+        }
+      ]
+    },
+    {
+      "name": "RudderStack",
+      "category": "Customer data platform",
+      "hosts": [
+        "cdn.rudderlabs.com",
+        "rudderstack.com"
+      ],
+      "aliases": [
+        "RudderStack"
+      ]
+    },
+    {
+      "name": "mParticle",
+      "category": "Customer data platform",
+      "hosts": [
+        "mparticle.com"
+      ],
+      "aliases": [
+        "mParticle"
+      ]
+    },
+    {
+      "name": "Adobe Marketo Measure (Bizible)",
+      "category": "Analytics",
+      "hosts": [
+        "bizible.com",
+        "bizibly.com"
+      ],
+      "aliases": [
+        "Bizible"
+      ]
+    },
+    {
+      "name": "Dreamdata",
+      "category": "Analytics",
+      "hosts": [
+        "dreamdata.cloud",
+        "dreamdata.io"
+      ],
+      "aliases": [
+        "Dreamdata"
+      ]
+    },
+    {
+      "name": "Mixpanel",
+      "category": "Analytics",
+      "hosts": [
+        "mxpnl.com",
+        "mixpanel.com"
+      ],
+      "aliases": [
+        "Mixpanel"
+      ]
+    },
+    {
+      "name": "Amplitude",
+      "category": "Analytics",
+      "hosts": [
+        "amplitude.com"
+      ],
+      "aliases": [
+        "Amplitude"
+      ]
+    },
+    {
+      "name": "Heap",
+      "category": "Analytics",
+      "hosts": [
+        "heapanalytics.com",
+        "heap-api.com"
+      ],
+      "aliases": [
+        "Heap"
+      ]
+    },
+    {
+      "name": "PostHog",
+      "category": "Analytics",
+      "hosts": [
+        "posthog.com"
+      ],
+      "aliases": [
+        "PostHog"
+      ],
+      "urlPattern": "posthog"
+    },
+    {
+      "name": "Pendo",
+      "category": "User onboarding",
+      "hosts": [
+        "pendo.io"
+      ],
+      "aliases": [
+        "Pendo"
+      ]
+    },
+    {
+      "name": "Plausible",
+      "category": "Analytics",
+      "hosts": [
+        "plausible.io"
+      ],
+      "aliases": [
+        "Plausible"
+      ]
+    },
+    {
+      "name": "Fathom",
+      "category": "Analytics",
+      "hosts": [
+        "usefathom.com"
+      ],
+      "aliases": [
+        "Fathom"
+      ]
+    },
+    {
+      "name": "Matomo",
+      "category": "Analytics",
+      "hosts": [
+        "matomo.cloud"
+      ],
+      "aliases": [
+        "Matomo Analytics",
+        "Matomo"
+      ]
+    },
+    {
+      "name": "Naver Analytics",
+      "category": "Analytics",
+      "hosts": [
+        "wcs.naver.net",
+        "wcs.naver.com"
+      ],
+      "aliases": [
+        "Naver Analytics"
+      ]
+    },
+    {
+      "name": "Hotjar",
+      "category": "Session replay",
+      "hosts": [
+        "hotjar.com",
+        "hotjar.io"
+      ],
+      "aliases": [
+        "Hotjar"
+      ],
+      "ids": [
+        {
+          "label": "Hotjar site",
+          "pattern": "hotjar-(\\d+)\\.js"
+        }
+      ]
+    },
+    {
+      "name": "Microsoft Clarity",
+      "category": "Session replay",
+      "hosts": [
+        "clarity.ms"
+      ],
+      "aliases": [
+        "Microsoft Clarity"
+      ],
+      "ids": [
+        {
+          "label": "Clarity project",
+          "pattern": "clarity\\.ms/tag/([a-z0-9]+)"
+        }
+      ]
+    },
+    {
+      "name": "FullStory",
+      "category": "Session replay",
+      "hosts": [
+        "fullstory.com"
+      ],
+      "aliases": [
+        "FullStory"
+      ]
+    },
+    {
+      "name": "LogRocket",
+      "category": "Session replay",
+      "hosts": [
+        "logr-in.com",
+        "lr-ingest.com",
+        "lr-ingest.io",
+        "logrocket.io"
+      ],
+      "aliases": [
+        "LogRocket"
+      ]
+    },
+    {
+      "name": "Mouseflow",
+      "category": "Session replay",
+      "hosts": [
+        "mouseflow.com"
+      ],
+      "aliases": [
+        "Mouseflow"
+      ]
+    },
+    {
+      "name": "Lucky Orange",
+      "category": "Session replay",
+      "hosts": [
+        "luckyorange.com",
+        "luckyorange.net"
+      ],
+      "aliases": [
+        "Lucky Orange"
+      ]
+    },
+    {
+      "name": "Crazy Egg",
+      "category": "Session replay",
+      "hosts": [
+        "crazyegg.com"
+      ],
+      "aliases": [
+        "Crazy Egg"
+      ]
+    },
+    {
+      "name": "Contentsquare",
+      "category": "Session replay",
+      "hosts": [
+        "contentsquare.net"
+      ],
+      "aliases": [
+        "Contentsquare"
+      ]
+    },
+    {
+      "name": "HubSpot",
+      "category": "Marketing automation",
+      "hosts": [
+        "hs-scripts.com",
+        "hs-analytics.net",
+        "hsforms.net",
+        "hsforms.com",
+        "hs-banner.com",
+        "hscollectedforms.net",
+        "hubspot.com",
+        "hsadspixel.net",
+        "usemessages.com",
+        "hubspotusercontent.com",
+        "hs-sites.com"
+      ],
+      "aliases": [
+        "HubSpot",
+        "HubSpot Analytics",
+        "HubSpot Chat",
+        "HubSpot CMS Hub",
+        "HubSpot WordPress plugin"
+      ],
+      "ids": [
+        {
+          "label": "HubSpot portal",
+          "pattern": "hs-scripts\\.com/(\\d+)\\.js"
+        },
+        {
+          "label": "HubSpot portal",
+          "pattern": "hs-analytics\\.net/analytics/\\d+/(\\d+)\\.js"
+        }
+      ]
+    },
+    {
+      "name": "Marketo",
+      "category": "Marketing automation",
+      "hosts": [
+        "munchkin.marketo.net",
+        "mktoresp.com",
+        "marketo.com"
+      ],
+      "aliases": [
+        "Marketo",
+        "Marketo Forms"
+      ],
+      "ids": [
+        {
+          "label": "Marketo instance",
+          "pattern": "([0-9]{3}-[A-Z]{3}-[0-9]{3})"
+        }
+      ],
+      "urlPattern": "forms2(\\.min)?\\.js|/index\\.php/form/getForm",
+      "queryPattern": "[?&]munchkinId="
+    },
+    {
+      "name": "Salesforce Account Engagement (Pardot)",
+      "category": "Marketing automation",
+      "hosts": [
+        "pardot.com"
+      ],
+      "aliases": [
+        "Pardot"
+      ]
+    },
+    {
+      "name": "Oracle Eloqua",
+      "category": "Marketing automation",
+      "hosts": [
+        "en25.com",
+        "eloqua.com"
+      ],
+      "aliases": [
+        "Eloqua"
+      ]
+    },
+    {
+      "name": "Klaviyo",
+      "category": "Marketing automation",
+      "hosts": [
+        "klaviyo.com"
+      ],
+      "aliases": [
+        "Klaviyo"
+      ]
+    },
+    {
+      "name": "Mailchimp",
+      "category": "Email",
+      "hosts": [
+        "chimpstatic.com",
+        "list-manage.com"
+      ],
+      "aliases": [
+        "MailChimp",
+        "Mailchimp"
+      ]
+    },
+    {
+      "name": "ActiveCampaign",
+      "category": "Marketing automation",
+      "hosts": [
+        "app-us1.com",
+        "trackcmp.net",
+        "activehosted.com"
+      ],
+      "aliases": [
+        "ActiveCampaign"
+      ]
+    },
+    {
+      "name": "Customer.io",
+      "category": "Marketing automation",
+      "hosts": [
+        "customer.io",
+        "customerioforms.com"
+      ],
+      "aliases": [
+        "Customer.io"
+      ]
+    },
+    {
+      "name": "Braze",
+      "category": "Marketing automation",
+      "hosts": [
+        "appboycdn.com",
+        "braze.com",
+        "braze.eu"
+      ],
+      "aliases": [
+        "Braze"
+      ]
+    },
+    {
+      "name": "Iterable",
+      "category": "Marketing automation",
+      "hosts": [
+        "iterable.com"
+      ],
+      "aliases": [
+        "Iterable"
+      ]
+    },
+    {
+      "name": "Intercom",
+      "category": "Live chat",
+      "hosts": [
+        "intercom.io",
+        "intercomcdn.com",
+        "intercomassets.com"
+      ],
+      "aliases": [
+        "Intercom"
+      ],
+      "ids": [
+        {
+          "label": "Intercom app",
+          "pattern": "widget\\.intercom\\.io/widget/([a-z0-9]+)"
+        }
+      ]
+    },
+    {
+      "name": "Drift",
+      "category": "Live chat",
+      "hosts": [
+        "driftt.com",
+        "drift.com"
+      ],
+      "aliases": [
+        "Drift"
+      ]
+    },
+    {
+      "name": "Qualified",
+      "category": "Live chat",
+      "hosts": [
+        "qualified.com"
+      ],
+      "aliases": [
+        "Qualified"
+      ]
+    },
+    {
+      "name": "Zendesk",
+      "category": "Live chat",
+      "hosts": [
+        "zdassets.com",
+        "zendesk.com",
+        "zopim.com"
+      ],
+      "aliases": [
+        "Zendesk",
+        "Zendesk Chat",
+        "Zendesk Messaging"
+      ]
+    },
+    {
+      "name": "Help Scout Beacon",
+      "category": "Live chat",
+      "hosts": [
+        "beacon-v2.helpscout.net"
+      ],
+      "aliases": [
+        "Help Scout"
+      ]
+    },
+    {
+      "name": "Crisp",
+      "category": "Live chat",
+      "hosts": [
+        "crisp.chat"
+      ],
+      "aliases": [
+        "Crisp Live Chat"
+      ]
+    },
+    {
+      "name": "LiveChat",
+      "category": "Live chat",
+      "hosts": [
+        "livechatinc.com"
+      ],
+      "aliases": [
+        "LiveChat"
+      ]
+    },
+    {
+      "name": "Tawk.to",
+      "category": "Live chat",
+      "hosts": [
+        "tawk.to"
+      ],
+      "aliases": [
+        "Tawk.to"
+      ]
+    },
+    {
+      "name": "Optimizely",
+      "category": "A/B Testing",
+      "hosts": [
+        "optimizely.com"
+      ],
+      "aliases": [
+        "Optimizely"
+      ],
+      "ids": [
+        {
+          "label": "Optimizely project",
+          "pattern": "cdn\\.optimizely\\.com/js/(\\d+)\\.js"
+        }
+      ],
+      "urlPattern": "optimizely"
+    },
+    {
+      "name": "VWO",
+      "category": "A/B Testing",
+      "hosts": [
+        "visualwebsiteoptimizer.com",
+        "vwo.com"
+      ],
+      "aliases": [
+        "Visual Website Optimizer",
+        "VWO"
+      ],
+      "urlPattern": "visualwebsiteoptimizer|/vwo[_-]"
+    },
+    {
+      "name": "AB Tasty",
+      "category": "A/B Testing",
+      "hosts": [
+        "abtasty.com"
+      ],
+      "aliases": [
+        "AB Tasty"
+      ]
+    },
+    {
+      "name": "Convert",
+      "category": "A/B Testing",
+      "hosts": [
+        "convertexperiments.com"
+      ],
+      "aliases": [
+        "Convert"
+      ]
+    },
+    {
+      "name": "Intellimize",
+      "category": "Personalisation",
+      "hosts": [
+        "intellimize.co"
+      ],
+      "aliases": [
+        "Intellimize"
+      ]
+    },
+    {
+      "name": "Mutiny",
+      "category": "Personalisation",
+      "hosts": [
+        "mutinycdn.com",
+        "mutinyhq.io",
+        "mutinyhq.com"
+      ],
+      "aliases": [
+        "Mutiny"
+      ]
+    },
+    {
+      "name": "Trendemon",
+      "category": "Personalisation",
+      "hosts": [
+        "trendemon.com"
+      ],
+      "aliases": [
+        "Trendemon"
+      ]
+    },
+    {
+      "name": "LaunchDarkly",
+      "category": "Feature management",
+      "hosts": [
+        "launchdarkly.com"
+      ],
+      "aliases": [
+        "LaunchDarkly"
+      ],
+      "urlPattern": "launchdarkly"
+    },
+    {
+      "name": "Statsig",
+      "category": "Feature management",
+      "hosts": [
+        "statsig.com",
+        "featuregates.org",
+        "statsigapi.net"
+      ],
+      "aliases": [
+        "Statsig"
+      ],
+      "urlPattern": "statsig",
+      "queryPattern": "[?&]st=javascript-client(&|$)"
+    },
+    {
+      "name": "GrowthBook",
+      "category": "Feature management",
+      "hosts": [
+        "growthbook.io"
+      ],
+      "aliases": [
+        "GrowthBook"
+      ],
+      "urlPattern": "growthbook"
+    },
+    {
+      "name": "MadKudu",
+      "category": "Account identification",
+      "hosts": [
+        "madkudu.com"
+      ],
+      "aliases": [
+        "MadKudu"
+      ]
+    },
+    {
+      "name": "Clearbit / HubSpot Breeze Intelligence",
+      "category": "Account identification",
+      "hosts": [
+        "clearbitscripts.com",
+        "clearbitjs.com",
+        "clearbit.com"
+      ],
+      "aliases": [
+        "Clearbit Reveal",
+        "Clearbit"
+      ]
+    },
+    {
+      "name": "6sense",
+      "category": "Account identification",
+      "hosts": [
+        "6sc.co",
+        "6sense.com"
+      ],
+      "aliases": [
+        "6sense"
+      ]
+    },
+    {
+      "name": "Demandbase",
+      "category": "Account identification",
+      "hosts": [
+        "demandbase.com",
+        "company-target.com"
+      ],
+      "aliases": [
+        "Demandbase"
+      ]
+    },
+    {
+      "name": "ZoomInfo",
+      "category": "Account identification",
+      "hosts": [
+        "zoominfo.com",
+        "zi-scripts.com"
+      ],
+      "aliases": [
+        "ZoomInfo"
+      ]
+    },
+    {
+      "name": "Dealfront (Leadfeeder)",
+      "category": "Account identification",
+      "hosts": [
+        "lfeeder.com",
+        "leadfeeder.com"
+      ],
+      "aliases": [
+        "Leadfeeder"
+      ]
+    },
+    {
+      "name": "RB2B",
+      "category": "Account identification",
+      "hosts": [
+        "rb2b.com"
+      ],
+      "aliases": [
+        "RB2B"
+      ]
+    },
+    {
+      "name": "Clickagy",
+      "category": "Account identification",
+      "hosts": [
+        "clickagy.com"
+      ],
+      "aliases": [
+        "Clickagy"
+      ]
+    },
+    {
+      "name": "Koala",
+      "category": "Account identification",
+      "hosts": [
+        "getkoala.com"
+      ],
+      "aliases": [
+        "Koala"
+      ]
+    },
+    {
+      "name": "Warmly",
+      "category": "Account identification",
+      "hosts": [
+        "getwarmly.com"
+      ],
+      "aliases": [
+        "Warmly"
+      ]
+    },
+    {
+      "name": "Common Room",
+      "category": "Account identification",
+      "hosts": [
+        "cr-relay.com"
+      ],
+      "aliases": [
+        "Common Room"
+      ]
+    },
+    {
+      "name": "Vector",
+      "category": "Account identification",
+      "hosts": [
+        "vector.co"
+      ],
+      "aliases": [
+        "Vector"
+      ]
+    },
+    {
+      "name": "G2 buyer intent",
+      "category": "Reviews",
+      "hosts": [
+        "tracking.g2crowd.com",
+        "tracking-api.g2.com"
+      ],
+      "aliases": [
+        "G2"
+      ]
+    },
+    {
+      "name": "Capterra tracking",
+      "category": "Reviews",
+      "hosts": [
+        "ct.capterra.com",
+        "tr.capterra.com"
+      ],
+      "aliases": [
+        "Capterra"
+      ]
+    },
+    {
+      "name": "Trustpilot",
+      "category": "Reviews",
+      "hosts": [
+        "trustpilot.com"
+      ],
+      "aliases": [
+        "Trustpilot"
+      ]
+    },
+    {
+      "name": "Yotpo",
+      "category": "Reviews",
+      "hosts": [
+        "yotpo.com"
+      ],
+      "aliases": [
+        "Yotpo"
+      ]
+    },
+    {
+      "name": "Chili Piper",
+      "category": "Appointment scheduling",
+      "hosts": [
+        "chilipiper.com"
+      ],
+      "aliases": [
+        "Chili Piper"
+      ]
+    },
+    {
+      "name": "Calendly",
+      "category": "Appointment scheduling",
+      "hosts": [
+        "calendly.com"
+      ],
+      "aliases": [
+        "Calendly"
+      ]
+    },
+    {
+      "name": "Navattic",
+      "category": "Interactive demos",
+      "hosts": [
+        "navattic.com"
+      ],
+      "aliases": [
+        "Navattic"
+      ]
+    },
+    {
+      "name": "Storylane",
+      "category": "Interactive demos",
+      "hosts": [
+        "storylane.io"
+      ],
+      "aliases": [
+        "Storylane"
+      ]
+    },
+    {
+      "name": "Arcade",
+      "category": "Interactive demos",
+      "hosts": [
+        "arcade.software"
+      ],
+      "aliases": [
+        "Arcade"
+      ]
+    },
+    {
+      "name": "Wistia",
+      "category": "Video players",
+      "hosts": [
+        "wistia.com",
+        "wistia.net"
+      ],
+      "aliases": [
+        "Wistia"
+      ]
+    },
+    {
+      "name": "Vimeo",
+      "category": "Video players",
+      "hosts": [
+        "player.vimeo.com",
+        "vimeocdn.com"
+      ],
+      "aliases": [
+        "Vimeo"
+      ]
+    },
+    {
+      "name": "YouTube embed",
+      "category": "Video players",
+      "rules": [
+        {
+          "host": "youtube.com",
+          "path": "^/(embed|iframe_api)"
+        },
+        {
+          "host": "youtube-nocookie.com",
+          "path": ".*"
+        }
+      ],
+      "aliases": [
+        "YouTube"
+      ],
+      "hosts": [
+        "googlevideo.com",
+        "ytimg.com",
+        "ggpht.com"
+      ]
+    },
+    {
+      "name": "Vidyard",
+      "category": "Video players",
+      "hosts": [
+        "vidyard.com"
+      ],
+      "aliases": [
+        "Vidyard"
+      ]
+    },
+    {
+      "name": "Maze",
+      "category": "Surveys",
+      "hosts": [
+        "maze.co"
+      ],
+      "aliases": [
+        "Maze"
+      ]
+    },
+    {
+      "name": "Typeform",
+      "category": "Form builders",
+      "hosts": [
+        "typeform.com"
+      ],
+      "aliases": [
+        "Typeform"
+      ]
+    },
+    {
+      "name": "CookieHub",
+      "category": "Cookie compliance",
+      "hosts": [
+        "cookiehub.net",
+        "cookiehub.eu"
+      ],
+      "aliases": [
+        "CookieHub"
+      ]
+    },
+    {
+      "name": "Ketch",
+      "category": "Cookie compliance",
+      "hosts": [
+        "ketchcdn.com",
+        "ketchjs.com"
+      ],
+      "aliases": [
+        "Ketch"
+      ]
+    },
+    {
+      "name": "OneTrust",
+      "category": "Cookie compliance",
+      "hosts": [
+        "cookielaw.org",
+        "onetrust.com"
+      ],
+      "aliases": [
+        "OneTrust"
+      ]
+    },
+    {
+      "name": "Cookiebot",
+      "category": "Cookie compliance",
+      "hosts": [
+        "cookiebot.com"
+      ],
+      "aliases": [
+        "Cookiebot"
+      ]
+    },
+    {
+      "name": "Osano",
+      "category": "Cookie compliance",
+      "hosts": [
+        "osano.com"
+      ],
+      "aliases": [
+        "Osano"
+      ]
+    },
+    {
+      "name": "Termly",
+      "category": "Cookie compliance",
+      "hosts": [
+        "termly.io"
+      ],
+      "aliases": [
+        "Termly"
+      ]
+    },
+    {
+      "name": "iubenda",
+      "category": "Cookie compliance",
+      "hosts": [
+        "iubenda.com"
+      ],
+      "aliases": [
+        "iubenda"
+      ]
+    },
+    {
+      "name": "Usercentrics",
+      "category": "Cookie compliance",
+      "hosts": [
+        "usercentrics.eu"
+      ],
+      "aliases": [
+        "Usercentrics"
+      ]
+    },
+    {
+      "name": "CookieYes",
+      "category": "Cookie compliance",
+      "hosts": [
+        "cdn-cookieyes.com",
+        "cookieyes.com"
+      ],
+      "aliases": [
+        "CookieYes"
+      ]
+    },
+    {
+      "name": "Shopify",
+      "category": "Ecommerce",
+      "hosts": [
+        "cdn.shopify.com",
+        "shopify.com",
+        "shopifysvc.com",
+        "myshopify.com",
+        "shop.app",
+        "shopifycdn.net"
+      ],
+      "aliases": [
+        "Shopify",
+        "Shopify Plus"
+      ]
+    },
+    {
+      "name": "Stripe",
+      "category": "Payment processors",
+      "hosts": [
+        "js.stripe.com",
+        "m.stripe.network",
+        "checkout.stripe.com"
+      ],
+      "aliases": [
+        "Stripe"
+      ]
+    },
+    {
+      "name": "Paddle",
+      "category": "Payment processors",
+      "hosts": [
+        "paddle.com"
+      ],
+      "aliases": [
+        "Paddle"
+      ]
+    },
+    {
+      "name": "Chargebee",
+      "category": "Payment processors",
+      "hosts": [
+        "chargebee.com"
+      ],
+      "aliases": [
+        "Chargebee"
+      ]
+    },
+    {
+      "name": "Recurly",
+      "category": "Payment processors",
+      "hosts": [
+        "recurly.com"
+      ],
+      "aliases": [
+        "Recurly"
+      ]
+    },
+    {
+      "name": "Lemon Squeezy",
+      "category": "Payment processors",
+      "hosts": [
+        "lemonsqueezy.com"
+      ],
+      "aliases": [
+        "Lemon Squeezy"
+      ]
+    },
+    {
+      "name": "PartnerStack",
+      "category": "Affiliate programs",
+      "hosts": [
+        "growsumo.com",
+        "partnerstack.com",
+        "grsm.io",
+        "partnerlinks.io"
+      ],
+      "aliases": [
+        "PartnerStack"
+      ]
+    },
+    {
+      "name": "Rewardful",
+      "category": "Affiliate programs",
+      "hosts": [
+        "wdfl.co",
+        "getrewardful.com"
+      ],
+      "aliases": [
+        "Rewardful"
+      ]
+    },
+    {
+      "name": "FirstPromoter",
+      "category": "Affiliate programs",
+      "hosts": [
+        "firstpromoter.com"
+      ],
+      "aliases": [
+        "FirstPromoter"
+      ]
+    },
+    {
+      "name": "Impact",
+      "category": "Affiliate programs",
+      "hosts": [
+        "impactcdn.com",
+        "impactradius-event.com",
+        "pxf.io",
+        "ojrq.net",
+        "sjv.io"
+      ],
+      "aliases": [
+        "Impact"
+      ]
+    },
+    {
+      "name": "Tapfiliate",
+      "category": "Affiliate programs",
+      "hosts": [
+        "tapfiliate.com"
+      ],
+      "aliases": [
+        "Tapfiliate"
+      ]
+    },
+    {
+      "name": "GovX ID",
+      "category": "Loyalty & rewards",
+      "hosts": [
+        "govx.com",
+        "govx.net"
+      ],
+      "aliases": [
+        "GovX ID"
+      ]
+    },
+    {
+      "name": "Attentive",
+      "category": "Marketing automation",
+      "hosts": [
+        "attn.tv",
+        "attentivemobile.com"
+      ],
+      "aliases": [
+        "Attentive"
+      ]
+    },
+    {
+      "name": "Postscript",
+      "category": "Marketing automation",
+      "hosts": [
+        "postscript.io"
+      ],
+      "aliases": [
+        "Postscript"
+      ]
+    },
+    {
+      "name": "OptinMonster",
+      "category": "Marketing automation",
+      "hosts": [
+        "omappapi.com",
+        "optinmonster.com"
+      ],
+      "aliases": [
+        "OptinMonster"
+      ]
+    },
+    {
+      "name": "Privy",
+      "category": "Marketing automation",
+      "hosts": [
+        "privy.com"
+      ],
+      "aliases": [
+        "Privy"
+      ]
+    },
+    {
+      "name": "Triple Whale",
+      "category": "Analytics",
+      "hosts": [
+        "triplewhale.com",
+        "config-security.com"
+      ],
+      "aliases": [
+        "Triple Whale"
+      ]
+    },
+    {
+      "name": "Elevar",
+      "category": "Tag managers",
+      "hosts": [
+        "getelevar.com"
+      ],
+      "aliases": [
+        "Elevar"
+      ]
+    },
+    {
+      "name": "Northbeam",
+      "category": "Analytics",
+      "hosts": [
+        "northbeam.io"
+      ],
+      "aliases": [
+        "Northbeam"
+      ]
+    },
+    {
+      "name": "Sentry",
+      "category": "RUM",
+      "hosts": [
+        "sentry-cdn.com",
+        "sentry.io"
+      ],
+      "aliases": [
+        "Sentry"
+      ]
+    },
+    {
+      "name": "Datadog RUM",
+      "category": "RUM",
+      "hosts": [
+        "datadoghq-browser-agent.com",
+        "browser-intake-datadoghq.com"
+      ],
+      "aliases": [
+        "Datadog"
+      ]
+    },
+    {
+      "name": "Cloudflare Web Analytics",
+      "category": "Analytics",
+      "hosts": [
+        "static.cloudflareinsights.com"
+      ],
+      "aliases": [
+        "Cloudflare Browser Insights",
+        "Cloudflare Web Analytics"
+      ]
+    },
+    {
+      "name": "Vercel Analytics",
+      "category": "Analytics",
+      "hosts": [
+        "va.vercel-scripts.com"
+      ],
+      "rules": [
+        {
+          "host": "*",
+          "path": "^/_vercel/insights"
+        }
+      ],
+      "aliases": [
+        "Vercel Analytics"
+      ]
+    },
+    {
+      "name": "Google reCAPTCHA",
+      "category": "Security",
+      "rules": [
+        {
+          "host": "google.com",
+          "path": "^/recaptcha"
+        },
+        {
+          "host": "gstatic.com",
+          "path": "^/recaptcha"
+        },
+        {
+          "host": "recaptcha.net",
+          "path": ".*"
+        }
+      ],
+      "aliases": [
+        "reCAPTCHA"
+      ]
+    },
+    {
+      "name": "Webflow",
+      "category": "Page builders",
+      "hosts": [
+        "website-files.com",
+        "webflow.com"
+      ],
+      "aliases": [
+        "Webflow"
+      ]
+    },
+    {
+      "name": "Sanity",
+      "category": "CMS",
+      "hosts": [
+        "cdn.sanity.io",
+        "api.sanity.io"
+      ],
+      "aliases": [
+        "Sanity"
+      ]
+    },
+    {
+      "name": "Weglot",
+      "category": "Translation",
+      "hosts": [
+        "weglot.com",
+        "weglot.io"
+      ],
+      "aliases": [
+        "Weglot"
+      ]
+    },
+    {
+      "name": "Descope",
+      "category": "Authentication",
+      "hosts": [
+        "descope.com",
+        "descope.org",
+        "descopecdn.com"
+      ],
+      "aliases": [
+        "Descope"
+      ]
+    },
+    {
+      "name": "Cloudflare Turnstile",
+      "category": "Security",
+      "rules": [
+        {
+          "host": "challenges.cloudflare.com",
+          "path": ".*"
+        }
+      ],
+      "aliases": [
+        "Cloudflare Turnstile"
+      ]
+    }
+  ],
+  "first_party_tagging": [
+    {
+      "name": "Server-side or first-party Google tag",
+      "path": "^/(gtm\\.js|gtag/js)\\b",
+      "excludeHosts": [
+        "googletagmanager.com"
+      ]
+    },
+    {
+      "name": "First-party GA4 collection endpoint",
+      "path": "^/g/collect\\b",
+      "excludeHosts": [
+        "google-analytics.com",
+        "analytics.google.com",
+        "google.com",
+        "doubleclick.net"
+      ]
+    },
+    {
+      "name": "First-party Meta Pixel endpoint",
+      "path": "^/tr/?\\?.*\\bid=\\d+",
+      "excludeHosts": [
+        "facebook.com"
+      ]
+    },
+    {
+      "name": "First-party Segment proxy",
+      "path": "^/(v1/(t|p|i|batch|projects/[^/]+/settings)|analytics\\.js/v1/)",
+      "excludeHosts": [
+        "segment.io",
+        "segment.com"
+      ]
+    }
+  ],
+  "ignore_hosts": [
+    "fonts.googleapis.com",
+    "fonts.gstatic.com",
+    "cdnjs.cloudflare.com",
+    "cdn.jsdelivr.net",
+    "unpkg.com",
+    "ajax.googleapis.com",
+    "use.typekit.net",
+    "p.typekit.net",
+    "gstatic.com",
+    "googleapis.com",
+    "cloudflare.com",
+    "jquery.com",
+    "bootstrapcdn.com",
+    "fontawesome.com",
+    "polyfill.io",
+    "w3.org",
+    "schema.org",
+    "cloudinary.com",
+    "d3e54v103j8qbb.cloudfront.net",
+    "finsweet.com"
+  ]
+}

@@ -1,0 +1,357 @@
+{
+  "summary": {
+    "checkedAt": "2026-10-28T10:54:57.693Z",
+    "claims": 43,
+    "citations": 55,
+    "problems": 0,
+    "warnings": 1
+  },
+  "results": [
+    {
+      "section": "business_model",
+      "index": 0,
+      "text": "Pricing is per seat: a free plan, then Standard at $10 and Teams at $16 per seat per month when billed yearly. Monthly-billing prices weren't captured.",
+      "status": "seen",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "business_model",
+      "index": 1,
+      "text": "Enterprise starts at $15k a year with a 50-seat minimum, and its only CTA is 'Talk to sales'.",
+      "status": "seen",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "business_model",
+      "index": 2,
+      "text": "The business runs a hybrid motion: self-serve for individuals and teams, sales for large accounts.",
+      "status": "inferred",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "business_model",
+      "index": 3,
+      "text": "Only hosts need a seat. Invitees don't need a seat or an account.",
+      "status": "seen",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "business_model",
+      "index": 4,
+      "text": "Each booked meeting therefore shows the product to someone who isn't paying, which is a built-in exposure loop.",
+      "status": "inferred",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "business_model",
+      "index": 5,
+      "text": "Payments are a product line: upfront booking payments, packages, invoices and payment links, through Stripe or PayPal.",
+      "status": "seen",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "business_model",
+      "index": 6,
+      "text": "Whether Calendly takes a fee on payments, its revenue and its paying customer count aren't visible from the site.",
+      "status": "unknown",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "positioning",
+      "index": 0,
+      "text": "The homepage hero in this capture reads 'All the work around meetings, handled.', and a banner on all 7 captured pages introduces 'the new Calendly'.",
+      "status": "seen",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "positioning",
+      "index": 1,
+      "text": "Calendly is repositioning from scheduling toward AI-assisted meeting work, while keeping scheduling as the anchor claim.",
+      "status": "inferred",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "positioning",
+      "index": 2,
+      "text": "The site gives two different user counts: 'over 20 million users' and 'more than 50 million individuals and businesses'.",
+      "status": "seen",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "positioning",
+      "index": 3,
+      "text": "Four of the five homepage customer stories are founders (of small businesses and one nonprofit), each with an outcome number such as '$1,200 annual savings' or '100% attendance rate'. The fifth is Achievement First ('75 hours saved monthly').",
+      "status": "seen",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "positioning",
+      "index": 4,
+      "text": "Calendly publishes 'Calendly vs' blog posts, and the Doodle and YouCanBookMe comparisons earn the most estimated search traffic of them.",
+      "status": "seen",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "positioning",
+      "index": 5,
+      "text": "In search, Calendly's top 20 non-branded keywords overlap most with Square (16 of 20), Zapier (15), emailtooltester.com and Setmore (14 each), and Appointy, Picktime and Jotform (13 each). Doodle overlaps on only 3.",
+      "status": "seen",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "acquisition",
+      "index": 0,
+      "text": "LinkedIn's Ad Library lists 9 Calendly ads in the US. Of the 5 read, they cover customer stories, a creator story, a comparison guide and the 'new Calendly' launch. The library doesn't show whether each ad is still running, and the screenshot includes an event ad and a jobs ad.",
+      "status": "seen",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "acquisition",
+      "index": 1,
+      "text": "Google's Ads Transparency Center shows no Calendly advertiser account with ads pointing to calendly.com in the US. The 2,000 to 3,000 ads that link to calendly.com come from other advertisers.",
+      "status": "seen",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "acquisition",
+      "index": 2,
+      "text": "Those other advertisers are most likely Calendly users sending people to their own booking pages.",
+      "status": "inferred",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "acquisition",
+      "index": 3,
+      "text": "Calendly's Facebook page has no active ads in the US Meta Ad Library.",
+      "status": "seen",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "acquisition",
+      "index": 4,
+      "text": "The Google Ads tag (AW-725106552) loads its conversion and remarketing endpoints on all 7 captured pages, even though no live US Google ads were found. It is likely used for remarketing audiences, ads in other countries, or ads under a different account name.",
+      "status": "inferred",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "acquisition",
+      "index": 5,
+      "text": "Paid acquisition looks light and B2B-focused in this capture: LinkedIn has Calendly ads, and no Meta, TikTok or Reddit pixels loaded. Tags can differ by region, and this capture ran from outside the US.",
+      "status": "inferred",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "acquisition",
+      "index": 6,
+      "text": "Clearbit's visitor identification loads on 6 of the 7 captured pages (the homepage loads only Clearbit's form script), and G2 buyer-intent tracking on 6.",
+      "status": "seen",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "acquisition",
+      "index": 7,
+      "text": "Sales can see which companies visit the site and which are researching Calendly on G2.",
+      "status": "inferred",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "acquisition",
+      "index": 8,
+      "text": "DataForSEO estimates about 276,000 monthly organic visits from Google in the US, from 34,184 ranking keywords, 810 of them at #1.",
+      "status": "seen",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "acquisition",
+      "index": 9,
+      "text": "Most organic traffic is brand demand. Branded searches drive 69% of estimated traffic across the top 100 keywords, and the homepage takes 73% of the estimated traffic across the top 100 pages.",
+      "status": "inferred",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "acquisition",
+      "index": 10,
+      "text": "The homepage also ranks #1 for non-branded category searches such as 'free online scheduling tool' (12,100 monthly searches) and 'scheduling app' (9,900).",
+      "status": "seen",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "acquisition",
+      "index": 11,
+      "text": "The blog is the second-largest sitemap section (286 URLs) but earns about 3% of estimated organic traffic across the top 100 pages.",
+      "status": "seen",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "acquisition",
+      "index": 12,
+      "text": "The blog's search-targeted posts aren't paying off much in search relative to its size.",
+      "status": "inferred",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "acquisition",
+      "index": 13,
+      "text": "Some users' public booking pages rank in Google on their own. One conference booking page gets about 12,447 estimated visits from 'itc timing', and the other booking pages found total about 1,500.",
+      "status": "inferred",
+      "problems": [],
+      "warnings": [
+        "[claim] numbers not found in the data or the cited evidence: 1,500"
+      ]
+    },
+    {
+      "section": "funnel",
+      "index": 0,
+      "text": "'Get started for free' is in the nav of 6 of the 7 captured pages, and the homepage offers Google and Microsoft signup with 'No credit card required'.",
+      "status": "seen",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "funnel",
+      "index": 1,
+      "text": "Free signup is the primary conversion the site pushes, with sales as the secondary path.",
+      "status": "inferred",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "funnel",
+      "index": 2,
+      "text": "Signup includes a free 14-day trial of Teams Plus features, with no credit card required.",
+      "status": "seen",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "funnel",
+      "index": 3,
+      "text": "'Talk to sales' is the secondary CTA on all 7 captured pages and leads to a short Marketo form: first name, last name, email, intended use and comments.",
+      "status": "seen",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "funnel",
+      "index": 4,
+      "text": "The sales form's custom fields end in '__c', the Salesforce suffix, so leads sync to Salesforce.",
+      "status": "inferred",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "funnel",
+      "index": 5,
+      "text": "Statsig experimentation loads on all 7 captured pages, served through Calendly's own domains: experiment scripts on calendly.com and SDK calls to ss.calendly.com.",
+      "status": "seen",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "funnel",
+      "index": 6,
+      "text": "Content on the site is likely under active A/B testing, so what a visitor sees can differ between visits. The capture doesn't show which sections are tested.",
+      "status": "inferred",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "funnel",
+      "index": 7,
+      "text": "Maze's research snippet loads on all 7 captured pages, so on-site prompts or surveys can be shown. None appeared in the capture.",
+      "status": "seen",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "funnel",
+      "index": 8,
+      "text": "Where conversions are reported isn't visible. The capture only loads pages, so no signup or form event could fire.",
+      "status": "unknown",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "retention",
+      "index": 0,
+      "text": "Segment loads through Calendly's own subdomains (s.calendly.com) instead of Segment's servers.",
+      "status": "seen",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "retention",
+      "index": 1,
+      "text": "Routing Segment through its own domain keeps tracking working when ad blockers block Segment's domains, a sign of a mature data setup.",
+      "status": "inferred",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "retention",
+      "index": 2,
+      "text": "Amplitude product analytics loads on all 7 captured marketing pages.",
+      "status": "seen",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "retention",
+      "index": 3,
+      "text": "Marketo tracking loads on 6 of the 7 captured pages (not the homepage), so marketing email and lead nurturing likely run in Marketo.",
+      "status": "inferred",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "retention",
+      "index": 4,
+      "text": "Intercom chat loads on all 7 captured pages.",
+      "status": "seen",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "retention",
+      "index": 5,
+      "text": "The help section is the largest part of the sitemap: 429 of 1,072 URLs.",
+      "status": "seen",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "retention",
+      "index": 6,
+      "text": "Churn, expansion and lifecycle email content aren't visible from the public site.",
+      "status": "unknown",
+      "problems": [],
+      "warnings": []
+    }
+  ]
+}

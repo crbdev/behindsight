@@ -1,0 +1,262 @@
+{
+  "reviewedAt": "2026-10-28T10:30:00Z",
+  "summary": "Most of the report holds up: prices, page quotes, per-page tag counts and DataForSEO figures match the evidence, and inferred claims carry fair confidence. The errors cluster in the ad and intent sections: LinkedIn's 9 library ads are called 'live' though the data has no active status and the screenshot shows a past-event ad and a jobs ad, the Meta page is called verified when collected.json says verified: false, and Clearbit visitor identification is counted on 7 pages when the network log shows 6. A few seen claims also carry interpretation (primary conversion, the booking-link explanation for Google, sales use of Clearbit).",
+  "items": [
+    {
+      "where": "summary",
+      "verdict": "overstated",
+      "reason": "Mostly matches the claims (per-seat pricing, free plan, Enterprise from $15k/yr on pricing.md; Marketo/Clearbit/G2/LinkedIn in the stack). Two phrases state more than the evidence: 'LinkedIn is the only ad library with live Calendly ads' (collected.json ads.linkedin has status 'found' and adsMatchingSearch '9' with no active flag or run dates, and ads/linkedin.jpg shows one of the ads promoting a 'June 18, 2026' event and another a jobs ad), and 'the site is under active Statsig experimentation', which is an inference from the SDK loading, written as fact.",
+      "fix": "Calendly sells scheduling software with an AI notetaker, an email scheduling assistant (Callie) and payments, priced per seat with a free plan and a sales-led Enterprise tier from $15k a year. Its marketing in this capture runs on brand-led organic search, free signup on nearly every page, and a B2B demand-generation stack (Marketo, Clearbit, G2 intent, LinkedIn). LinkedIn is the only ad library with Calendly ads listed (9, not all current), Meta and Google show none in the US, and Statsig's experiment SDK loads on every captured page."
+    },
+    {
+      "where": "at_a_glance[0]",
+      "verdict": "supported",
+      "reason": "home.md H2s and sections: Scheduling, Callie (AI assistant), Notetaker, Payments."
+    },
+    {
+      "where": "at_a_glance[1]",
+      "verdict": "supported",
+      "reason": "pricing.md: 'Always free', '$10 /seat/mo' 'Save 17%', '$16 /seat/mo' 'Save 20%', Enterprise 'Starts at $15k /yr'; JSON-LD Standard USD 10 and Teams USD 16 with billingDuration P1Y."
+    },
+    {
+      "where": "at_a_glance[2]",
+      "verdict": "supported",
+      "reason": "Matches business_model[2]: Get started on Free/Standard/Teams, 'Talk to sales' on Enterprise (pricing.md)."
+    },
+    {
+      "where": "at_a_glance[3]",
+      "verdict": "supported",
+      "reason": "'Get started for free' is the nav CTA on 6 of 7 pages and home.md shows 'Sign up with Google', 'Sign up with Microsoft' above the fold."
+    },
+    {
+      "where": "at_a_glance[4]",
+      "verdict": "overstated",
+      "reason": "Google 'not found' and Meta 'no active ads' (US) match collected.json. 'Live' for LinkedIn isn't supported: ads.linkedin gives only status 'found' and adsMatchingSearch '9', with no active status or dates, and ads/linkedin.jpg shows an ad for an event dated 'June 18, 2026' (four months before capture) and a '%FIRSTNAME%, explore relevant opportunities' jobs ad among the 9.",
+      "fix": "Value: 'LinkedIn library lists 9 ads; none on Google or Meta (US)'. Label 'Ads in libraries' rather than 'Live ads'."
+    },
+    {
+      "where": "at_a_glance[5]",
+      "verdict": "supported",
+      "reason": "collected.json seo.overview.organic.etv 276489; brandedShareOfTopKeywords 69. Labeled as an estimate."
+    },
+    {
+      "where": "at_a_glance[6]",
+      "verdict": "supported",
+      "reason": "network.json: calendly.com/_astro/StatsigSectionExperiments...js and ss.calendly.com/prod-sync load on all 7 pages."
+    },
+    {
+      "where": "at_a_glance[7]",
+      "verdict": "supported",
+      "reason": "First-party Segment proxy (evs.s.calendly.com, api.s.calendly.com), Marketo (munchkin on 6 pages), Statsig (7), Clearbit and G2 all in network.json; inferred label fits."
+    },
+    {
+      "where": "sections.business_model[0]",
+      "verdict": "supported",
+      "reason": "pricing.md shows '$10 /seat/mo' with 'Save 17%' and '$16 /seat/mo' with 'Save 20%' under a 'Billed monthly / Billed yearly' toggle; JSON-LD offers Standard Plan (USD) price 10 and Teams Plan (USD) 16, billingDuration P1Y. No monthly price in the capture."
+    },
+    {
+      "where": "sections.business_model[1]",
+      "verdict": "supported",
+      "reason": "pricing.md: 'Starts at $15k /yr', 'Starts at 50 seats', and the Enterprise column's CTA is 'Talk to sales'."
+    },
+    {
+      "where": "sections.business_model[2]",
+      "verdict": "supported",
+      "reason": "Public prices with 'Get started' on lower tiers and 'Talk to sales' on Enterprise (pricing.md), plus the Marketo sales form mktoForm_2588 on /contact. Matches the inference guide's hybrid row at high confidence."
+    },
+    {
+      "where": "sections.business_model[3]",
+      "verdict": "supported",
+      "reason": "pricing.md: Standard 'meeting invitees do not require a seat'; Teams 'meeting invitees do not require an account or seat'."
+    },
+    {
+      "where": "sections.business_model[4]",
+      "verdict": "supported",
+      "reason": "Reasonable medium-confidence inference from invitees not needing a seat or account (pricing.md). Other evidence agrees: 2000\u20133000 Google ads from other advertisers point to calendly.com and user booking pages rank in search."
+    },
+    {
+      "where": "sections.business_model[5]",
+      "verdict": "supported",
+      "reason": "home.md lists 'Upfront meeting payments', 'Meeting packages', 'Invoices', 'Payment links'; pricing.md 'Collect payments at booking via Stripe and PayPal'; signup.md 'Collect payments through Stripe or Paypal'."
+    },
+    {
+      "where": "sections.business_model[6]",
+      "verdict": "supported",
+      "reason": "No fee, revenue or paying-customer figure appears in any captured page."
+    },
+    {
+      "where": "sections.positioning[0]",
+      "verdict": "supported",
+      "reason": "home.md H1 'All the work around meetings, handled.'; the banner 'Introducing the new Calendly, built to handle all of the work around meetings.' is the first line of all 7 page files."
+    },
+    {
+      "where": "sections.positioning[1]",
+      "verdict": "supported",
+      "reason": "home.md title 'Meeting Scheduling Software and AI Meeting Tools' and H2 'Book meetings with the world's #1 scheduling tool'; LinkedIn ad 'Meet the new Calendly'. about.md is explicit: 'Scheduling is just the beginning. That's why we're taking on all of the work around meetings'. High confidence is fair."
+    },
+    {
+      "where": "sections.positioning[2]",
+      "verdict": "supported",
+      "reason": "about.md: Tope's bio says 'over 20 million users'; the leadership intro says 'more than 50 million individuals and businesses' (also '50M+' and 'over 50 million people' on about.md and contact.md)."
+    },
+    {
+      "where": "sections.positioning[3]",
+      "verdict": "overstated",
+      "reason": "The five homepage stories (home.md) are Elizabeth Saunders (Founder, Real Life E), Marques Stewart (Achievement First, '75 hours saved monthly'), Akira Bradley (Co-Founder, Barking with the Bradley's), Lizzie Lewis (Founder, Kitty of Angels) and Pua Pakele (Founder, RBL Media), each with an outcome number. 'Small-business' doesn't fit all four: customers.md describes Kitty of Angels as a 'cat rescue' tagged Non-profit.",
+      "fix": "Four of the five homepage customer stories are founders of small businesses or nonprofits with outcome numbers, such as '$1,200 annual savings' and '100% attendance rate'. The fifth is Achievement First ('75 hours saved monthly')."
+    },
+    {
+      "where": "sections.positioning[4]",
+      "verdict": "supported",
+      "reason": "seo.pages: /blog/calendly-vs-doodle ~668 and /blog/calendly-versus-youcanbookme ~413 are the only comparison posts among the top 100 pages; sitemap has 16 comparison-pattern URLs."
+    },
+    {
+      "where": "sections.positioning[5]",
+      "verdict": "overstated",
+      "reason": "Counts match seo.competitors (squareup 16, zapier 15, emailtooltester 14, setmore 14, appointy 13, picktime 13, doodle 3), but jotform.com also ranks for 13 and is left out of a list framed as the top overlaps.",
+      "fix": "In search, Calendly's top 20 non-branded keywords overlap most with Square (16 of 20), Zapier (15), emailtooltester.com and Setmore (14 each), and Appointy, Picktime and Jotform (13 each). Doodle overlaps on only 3."
+    },
+    {
+      "where": "sections.acquisition[0]",
+      "verdict": "overstated",
+      "reason": "collected.json ads.linkedin: status 'found', adsMatchingSearch '9', adsRead 5, with no active flag or run dates. ads/linkedin.jpg shows that the 9 include an ad for 'Jayde I. Powell | How I Work Live Ep. 002' on 'June 18, 2026' (past event at capture on 2026-10-28) and a '%FIRSTNAME%, explore relevant opportunities with Calendly' jobs ad. So 'live' isn't established, and not all 9 are marketing ads. The theme list also describes all 9 from 5 read.",
+      "fix": "LinkedIn is the only ad library with Calendly ads listed: 9 match the advertiser in the US, including at least one for a past event (June 18, 2026) and one jobs ad, so not all are current. The 5 read mix customer stories, creator stories, comparison content and the 'new Calendly' launch."
+    },
+    {
+      "where": "sections.acquisition[1]",
+      "verdict": "mislabeled",
+      "reason": "collected.json ads.google: status 'not found', note 'No advertiser account matching the brand has ads pointing to the domain in this region', domainAdsTotal '2000\u20133000', otherAdvertisersInSample 71. The data covers ads pointing to calendly.com, not all Calendly ads, and the reason ('such as booking links in their own ads') is an interpretation inside a seen claim.",
+      "fix": "Seen: 'Google's Ads Transparency Center shows no advertiser account matching Calendly with ads pointing to calendly.com in the US. Between 2,000 and 3,000 ads point to the domain; the 71 advertisers in the sample are other businesses.' Move the booking-link explanation to an inferred claim (medium)."
+    },
+    {
+      "where": "sections.acquisition[2]",
+      "verdict": "contradicted",
+      "reason": "collected.json ads.meta.page: name 'Calendly', alias 'calendly', \"verified\": false. activeAds '0' and the 'no active ads in US' note match, but the page is not marked verified.",
+      "fix": "Calendly's Facebook page (calendly) has no active ads in the US Meta Ad Library."
+    },
+    {
+      "where": "sections.acquisition[3]",
+      "verdict": "supported",
+      "reason": "network.json: googleads.g.doubleclick.net/pagead/viewthroughconversion/725106552, www.google.com/rmkt/collect/725106552 and /pagead/1p-user-list/725106552 fire on all 7 pages. The claim frames the explanation as possibilities at low confidence, which fits a US-only library check against a outside the US capture."
+    },
+    {
+      "where": "sections.acquisition[4]",
+      "verdict": "overstated",
+      "reason": "No facebook, tiktok or reddit hosts in network.json, and captureRegion is outside the US with www.a regional Google domain, which the claim notes. But 'LinkedIn ads are live' repeats the unsupported 'live' (see acquisition[0]), and Google Ads conversion and remarketing calls on all 7 pages are a second paid signal that cuts against 'light'.",
+      "fix": "Paid social looks light and B2B-focused in this capture: LinkedIn's library lists Calendly ads and its Insight Tag loads on 6 of 7 pages, while no Meta, TikTok or Reddit pixels loaded. The Google Ads remarketing tag also loads on all 7 pages. The capture ran from outside the US (outside the US time zone, a regional Google domain requests), and tags can differ by region. (inferred, low)"
+    },
+    {
+      "where": "sections.acquisition[5]",
+      "verdict": "contradicted",
+      "reason": "network.json: Clearbit's visitor-identification scripts (tag.clearbitscripts.com/v1/pk_6552.../tags.js, x.clearbitjs.com tracking.min.js, app.clearbit.com/v1/p) load on 6 pages, not the homepage. The homepage loads only marketo.clearbit.com/assets/v1/marketo/forms.js, Clearbit's Marketo form script, which is why the stack table says 7. G2 (tracking.g2crowd.com/attribution_tracking/conversions/5374.js) is on 6, correct. 'Sales can see which companies visit' is an inference inside a seen claim; the inference guide puts 'drives an outbound program' at medium.",
+      "fix": "Seen: 'Clearbit's visitor-identification scripts load on 6 of the 7 captured pages (all but the homepage, which loads only Clearbit's Marketo form script), and G2 buyer-intent tracking on 6.' Separate inferred claim (medium): 'Calendly can identify which companies visit the site; whether sales acts on it isn't visible.'"
+    },
+    {
+      "where": "sections.acquisition[6]",
+      "verdict": "supported",
+      "reason": "seo.overview.organic: etv 276489, keywords 34184, pos1 810. Written as a DataForSEO estimate."
+    },
+    {
+      "where": "sections.acquisition[7]",
+      "verdict": "supported",
+      "reason": "seo.brandedShareOfTopKeywords 69 (computed 152,646 of 220,570 top-100-keyword etv), sections homepage share 73. Top-100 keywords cover 80% of total etv, so branded traffic is at least 55% of the total estimate; 'most' holds and high confidence is fair."
+    },
+    {
+      "where": "sections.acquisition[8]",
+      "verdict": "supported",
+      "reason": "seo.keywords: 'free online scheduling tool' position 1, volume 12100, url /; 'scheduling app' position 1, volume 9900, url /."
+    },
+    {
+      "where": "sections.acquisition[9]",
+      "verdict": "supported",
+      "reason": "sitemap.sections blog 286 (second after help 429); seo.sections blog etv 7596, pages 29, share 3."
+    },
+    {
+      "where": "sections.acquisition[10]",
+      "verdict": "supported",
+      "reason": "Blog earns 3% of top-100-page estimated traffic from 286 sitemap URLs; the best blog page is /blog/how-to-share-your-google-calendar at ~2,156 and the best comparison post ~668. Medium confidence is fair given the guide's caveat that some content serves other purposes."
+    },
+    {
+      "where": "sections.acquisition[11]",
+      "verdict": "supported",
+      "reason": "seo.pages: /john-haller/itc ~12,447 visits across 16 keywords ('itc timing' alone is 12,438). Other user booking pages in the top 100 (jcmbarbershop 702, agendamientoorlando 253, etherealenergy 175 and six smaller) total ~1,465, excluding /app/ URLs. Low confidence fits."
+    },
+    {
+      "where": "sections.funnel[0]",
+      "verdict": "mislabeled",
+      "reason": "Facts check out: 'Get started for free' is in the nav on 6 of 7 pages (missing on signup.md) and home.md has 'Sign up with Google', 'Sign up with Microsoft', 'Sign up with email \u2022 No credit card required'. 'The primary conversion is free signup' is a conclusion drawn from CTA placement, so it belongs in an inferred claim.",
+      "fix": "Status inferred, confidence high (same text). Or keep seen and drop the lead: \"'Get started for free' is in the nav of 6 of the 7 captured pages, and the homepage offers Google and Microsoft signup with 'No credit card required'.\""
+    },
+    {
+      "where": "sections.funnel[1]",
+      "verdict": "supported",
+      "reason": "signup.md: 'TRY TEAMS PLUS EXPERIENCE FREE', 'Explore premium features with your free 14-day trial', 'No credit card required. Upgrade anytime.'; meta description 'free for 14 days'."
+    },
+    {
+      "where": "sections.funnel[2]",
+      "verdict": "supported",
+      "reason": "'Talk to sales' is in the nav on all 7 page files and links to /contact; collected.json forms show mktoForm_2588 with FirstName, LastName, Email, How_do_you_plan_on_using_Calendly__c, Form_Comments__c. The 'intended use' dropdown is a team-size selector ('With a small team (2-10 users)' to '50+ users'), per contact.md."
+    },
+    {
+      "where": "sections.funnel[3]",
+      "verdict": "supported",
+      "reason": "Field names How_do_you_plan_on_using_Calendly__c and Form_Comments__c use Salesforce's custom-field suffix; with a Marketo form this is a strong signal. High is fair."
+    },
+    {
+      "where": "sections.funnel[4]",
+      "verdict": "supported",
+      "reason": "network.json: StatsigSectionExperiments script on calendly.com and ss.calendly.com/prod-sync and /prod-health on all 7 pages."
+    },
+    {
+      "where": "sections.funnel[5]",
+      "verdict": "overstated",
+      "reason": "Statsig's SDK and a 'StatsigSectionExperiments' bundle load on all 7 pages, which supports section-level testing, but nothing in the capture shows the homepage hero is an experiment or that variants differ between visits.",
+      "fix": "Page sections are set up for A/B testing through Statsig, so some sections may differ between visitors. Which sections are tested isn't visible. (inferred, medium)"
+    },
+    {
+      "where": "sections.funnel[6]",
+      "verdict": "supported",
+      "reason": "network.json: snippet.maze.co loader and prompts.maze.co/api/widgets on all 7 pages; no survey text appears in the page files."
+    },
+    {
+      "where": "sections.funnel[7]",
+      "verdict": "supported",
+      "reason": "collected.json events is empty; only page_view and consent_update calls to Google appear in network.json."
+    },
+    {
+      "where": "sections.retention[0]",
+      "verdict": "supported",
+      "reason": "network.json: api.s.calendly.com/v1/p, /v1/i, /v1/t and evs.s.calendly.com/v1/projects/.../settings on all 7 pages; no segment.com or segment.io host appears."
+    },
+    {
+      "where": "sections.retention[1]",
+      "verdict": "supported",
+      "reason": "First-party Segment hosts on all 7 pages; the inference guide maps first-party tagging to a mature team and resilience to ad blockers. Medium is fair."
+    },
+    {
+      "where": "sections.retention[2]",
+      "verdict": "supported",
+      "reason": "network.json: api-sr.amplitude.com and sr-client-cfg.amplitude.com on all 7 pages, plus an Amplitude plugin loaded through evs.s.calendly.com."
+    },
+    {
+      "where": "sections.retention[3]",
+      "verdict": "supported",
+      "reason": "munchkin.marketo.net and 482-nmz-854.mktoresp.com on 6 pages, not the homepage (the homepage loads only Marketo forms2 from pages.calendly.com). Medium is fair; Segment also loads Braze plugins (evs.s.calendly.com/next-integrations/actions/braze-cloud-plugins), so lifecycle messaging may be split, but that doesn't contradict marketing email in Marketo."
+    },
+    {
+      "where": "sections.retention[4]",
+      "verdict": "supported",
+      "reason": "network.json: widget.intercom.io, js.intercomcdn.com and api-iam.intercom.io on all 7 pages."
+    },
+    {
+      "where": "sections.retention[5]",
+      "verdict": "supported",
+      "reason": "collected.json sitemap: totalUrls 1072, help 429, the largest section."
+    },
+    {
+      "where": "sections.retention[6]",
+      "verdict": "supported",
+      "reason": "No churn, expansion or lifecycle email content in the captured pages."
+    }
+  ]
+}
