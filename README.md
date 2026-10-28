@@ -1,6 +1,6 @@
 # Behindsight
 
-See what's behind any company's website. Behindsight is an agent skill that reverse-engineers a company's marketing from its public website. Give it a domain. It returns an HTML report covering the business model, positioning, acquisition channels, conversion funnel, retention tools and the full marketing stack. Every claim is labeled **seen**, **inferred** or **unknown** and links to its evidence.
+See what's behind any company's website. Behindsight is an agent skill that reverse-engineers a company's marketing from its public website. Give it a domain. It returns an HTML report covering the business model, positioning, acquisition channels, conversion funnel, retention tools, content strategy and the full marketing stack. Every claim is labeled **seen**, **inferred** or **unknown** and links to its evidence.
 
 ![The top of a Behindsight report on calendly.com: summary, evidence labels and highlights](docs/report-screenshot.png)
 
@@ -14,6 +14,7 @@ See the full [Calendly example report](examples/calendly.com/report.html). Downl
 | Network grab | Every pixel, tag and script the browser loads, before and after accepting cookies. Public account IDs (GTM containers, GA4 properties, Google Ads, Meta, LinkedIn, TikTok and more), tracking events like `sign_up` or `Lead`, and first-party or server-side tagging |
 | [Wappalyzer](https://github.com/HTTPArchive/wappalyzer) | Technology detection from page code, using HTTP Archive's open-source fork. Detections confirmed by the network grab are marked as such. |
 | Sitemap | Content sections and their size, comparison, integration and template pages, locales, and update dates by month |
+| Content sample | The newest blog posts (from the feed, the blog index or the sitemap) and the posts that earn the most search traffic: publish dates, authors, length, headings, CTAs, lead forms and links to the product. The agent reads them and maps topics, formats, funnel stages and how posts turn readers into customers |
 | Ad libraries | The company's own live ads from [Google's Ads Transparency Center](https://adstransparency.google.com), [Meta's Ad Library](https://www.facebook.com/ads/library) and [LinkedIn's Ad Library](https://www.linkedin.com/ad-library): counts, formats, dates, ad copy and sample images |
 | [DataForSEO](https://dataforseo.com) (optional) | Estimated organic traffic and keywords, top keywords and pages, traffic by site section, and the sites competing for their non-branded keywords |
 

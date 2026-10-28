@@ -17,8 +17,12 @@
     "positioning": [ /* claims */ ],
     "acquisition": [ /* claims */ ],
     "funnel": [ /* claims */ ],
-    "retention": [ /* claims */ ]
+    "retention": [ /* claims */ ],
+    "content_strategy": [ /* claims; include when content/ has posts */ ]
   },
+  "content_posts": [
+    { "url": "https://acme.com/blog/how-to-plan-a-sprint", "topic": "Project planning", "format": "how-to", "stage": "awareness", "cta": "free trial" }
+  ],
   "host_notes": [
     { "host": "cdn.example-vendor.com", "vendor": "Example Vendor", "category": "Personalisation", "confidence": "high", "note": "Website personalization script loaded on every page" }
   ]
@@ -48,6 +52,7 @@
   - `event`: a tracking event name. `ref` is the event, `detail` the platform and page.
   - `ads`: ad library data. `ref` names the platform and item ("meta: 1304008991871792", "google ads", "linkedin ads"), `detail` quotes the ad text or gives the counts.
   - `investigation`: evidence gathered with `investigate.mjs`. `ref` is the investigation ID (`inv-2`), `detail` quotes its text or gives its numbers.
+  - `content`: a sampled post. `ref` is the post URL (or "content sample" for the sample as a whole), `detail` quotes it or gives its numbers.
   - `seo`: DataForSEO search data. `ref` names the item (a keyword, a page URL, "organic overview"), `detail` gives the estimate.
   - `external`: a source outside the site. `ref` must be a URL.
 
@@ -59,6 +64,7 @@
 | `positioning` | The headline promise. Which category they claim. Who the page speaks to. The differentiators they lead with. What proof they use (logos, numbers, reviews). Who they compare themselves to. |
 | `acquisition` | Paid channels with tags installed. Organic and content investment from the sitemap. With search data: how big organic is, how much of it is branded, which sections and keywords earn it, and who they compete with in search. With ad library data: which platforms have live ads, how many, how recent, in which formats, and what they say. Partner, affiliate or review-site programs. Account-based or outbound signals (reverse-IP tools). |
 | `funnel` | The primary and secondary CTAs and where they lead. Form tools and fields. Demo scheduling. Checkout. Interactive demos. Experimentation tools and which pages they run on. Conversion events that fire. |
+| `content_strategy` | The main topic clusters, with example posts. The mix of formats and funnel stages. Who the content is written for. How often they publish (real dates only). How posts hand readers to the product (CTAs, lead magnets, gated downloads, newsletter). What they publish compared with what earns search traffic. |
 | `retention` | Email and lifecycle tools. In-app messaging and chat. Product analytics. Community, docs, changelog and education content. |
 
 Aim for 3 to 7 claims per section. Use `unknown` claims for important questions the evidence can't answer instead of leaving a section thin. The report presents data, so there is no separate open-questions or next-steps list.
@@ -66,6 +72,10 @@ Aim for 3 to 7 claims per section. Use `unknown` claims for important questions 
 `host_notes` identifies third-party hosts the collector didn't recognize. `confidence` (high, medium or low) is optional; use low when the identification is a guess from the URL alone.
 
 For e-commerce companies, at-a-glance labels like Offer, Price range, Shipping and returns, Primary CTA, Live ads, Organic search and Stack maturity work better than SaaS labels.
+
+## content_posts
+
+One entry per sampled post in `content/`. `format` is one of: how-to, listicle, comparison, case study, news or announcement, thought leadership, product update, template or tool, other. `stage` is awareness, consideration, decision or retention. `cta` is the main thing the post asks the reader to do, in a few words ("free trial", "book a demo", "download the guide", "none"). The report tallies these and shows them per post.
 
 ## At a glance
 

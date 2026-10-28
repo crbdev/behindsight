@@ -8,7 +8,7 @@ The teardown folder contains:
 
 - `findings.json`: the claims to check. Each has `text`, `status` (seen, inferred, unknown), `confidence` for inferred claims, and `evidence`.
 - `verify.json`: results of the automated citation check. Treat its problems as confirmed, and look past them; your job is the judgment the script can't make.
-- `collected.json`, `summary.md`, `pages/*.md`, `network.json`: the evidence. `collected.json` → `investigations` and the `investigations/` folder hold follow-up captures the analyst made (pages after clicks, host clues, extra searches); claims cite them by ID. Search `network.json` with grep rather than reading it whole.
+- `collected.json`, `summary.md`, `pages/*.md`, `network.json`: the evidence. `collected.json` → `investigations` and the `investigations/` folder hold follow-up captures the analyst made (pages after clicks, host clues, extra searches); claims cite them by ID. `content/*.md` holds the sampled posts that `content_strategy` claims and `content_posts` labels are based on; check labels against the posts. Search `network.json` with grep rather than reading it whole.
 
 Read `references/report-schema.md` and `references/inference-guide.md` in the skill folder first. They define the labels and how far each signal can be pushed.
 

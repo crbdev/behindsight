@@ -45,8 +45,9 @@ Read in this order:
 
 1. `summary.md`: the digest. Pages, CTAs, the merged stack, IDs, events, unidentified hosts, sitemap stats, ad library results and, when collected, search data.
 2. `ads/*.jpg`: look at the ad samples and library screenshots. They show messaging the digest can't.
-3. `pages/*.md`: full page text. Always read the homepage and pricing pages in full. Skim the rest.
-4. `collected.json`: when you need detail the digest drops (JSON-LD offers, form fields, every CTA).
+3. `content/*.md`: the sampled blog and article posts (the newest, plus the top search-traffic posts). Read the top-traffic posts and at least 5 recent ones in full, and skim the rest. For each, note its topic, format (how-to, listicle, comparison, case study, news or announcement, thought leadership, product update, template or tool), funnel stage (awareness, consideration, decision, retention) and what it asks the reader to do.
+4. `pages/*.md`: full page text. Always read the homepage and pricing pages in full. Skim the rest.
+5. `collected.json`: when you need detail the digest drops (JSON-LD offers, form fields, every CTA).
 
 Then read [references/inference-guide.md](references/inference-guide.md). Note what's missing as you read; step 4 is where you fill it. It maps common signals to conclusions and says how far each one can be pushed.
 
@@ -92,6 +93,7 @@ Write `findings.json` in the output folder, following [references/report-schema.
 - A tool found only during an investigation isn't in the stack table data; cite it with type `investigation` and the investigation ID.
 - Search numbers are DataForSEO estimates. Use evidence type `seo`, call them estimates in the claim text, and mark conclusions built on them as inferred. Tie them to the content footprint: which sections earn the traffic compared with which sections have the most pages.
 - Ad copy you read from a screenshot in `ads/` can't be checked by the script. Cite it with type `ads` and the image path as `ref` (for example `ads/google-3.jpg`), and quote it exactly; the reviewer checks it by eye.
+- Content strategy: when posts were collected, write a `content_strategy` section and label every sampled post in `content_posts` (see the schema). Answer what they publish, for whom, how often, how posts turn readers into leads or customers, and how what they publish compares with what earns search traffic. Base themes on several posts each, cite the posts with type `content`, and say how many posts were read. If the company publishes little, say that in one claim; don't pad.
 - For e-commerce companies, the business model is products, price points, shipping, returns and financing rather than plans. Read a product page and a collection page instead of a pricing page, and look for review, loyalty, buy-now-pay-later and returns apps in the stack.
 - Identify unrecognized third-party hosts you are confident about in `host_notes`. Leave the others alone.
 - Only use outside knowledge (press, funding, the company's own blog posts) when you have a source URL. Use evidence type `external` and keep the claim inferred unless the source states it outright.

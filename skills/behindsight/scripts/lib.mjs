@@ -225,6 +225,7 @@ export function extractPage() {
     h2: [...document.querySelectorAll('h2')].map((h) => clean(h.innerText)).filter(Boolean).slice(0, 25),
     ctas: ctas.slice(0, 40),
     forms,
+    feeds: [...document.querySelectorAll('link[rel="alternate"][type*="rss"], link[rel="alternate"][type*="atom"]')].map((l) => l.href).filter(Boolean),
     iframes: [...document.querySelectorAll('iframe[src]')].map((f) => f.src).filter((s) => /^https?:/.test(s)).slice(0, 30),
     jsonLd,
     links,

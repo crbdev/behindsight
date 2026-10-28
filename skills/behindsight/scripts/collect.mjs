@@ -6,6 +6,7 @@
 // Usage: node scripts/collect.mjs <domain-or-url> [--out <dir>] [--pages <url,url>]
 //        [--max-pages 7] [--wait 6000] [--no-consent] [--no-wappalyzer]
 //        [--no-seo] [--seo-location 2840] [--seo-language en] [--no-ads] [--ads-country US]
+//        [--no-content] [--content-posts 20]
 //
 // Search data is added when DATAFORSEO_LOGIN and DATAFORSEO_PASSWORD are set in the
 // environment, the skill's .env file or ~/.config/dataforseo/.env.
@@ -20,6 +21,7 @@ import { fileURLToPath } from 'node:url';
 import { gunzipSync } from 'node:zlib';
 import { collectSeo, collectSerpCompetitors, createClient, enrichSeo, seoCredentials } from './seo.mjs';
 import { collectAds } from './ads.mjs';
+import { cadence, collectContent, savePosts } from './content.mjs';
 import { acceptConsent, extractEvents, extractPage, hostMatches, isLocale, loadEnv, registrableDomain, siteHelpers, sleep } from './lib.mjs';
 
 const SKILL_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -41,7 +43,7 @@ const MARKETING_CATEGORIES = new Set([
 // ---------- arguments ----------
 
 const args = process.argv.slice(2);
-const opts = { maxPages: 7, wait: 6000, consent: true, wappalyzer: true, ads: true, adsCountry: 'US', seo: true, seoLocation: 2840, seoLanguage: 'en', pages: [], out: null };
+const opts = { maxPages: 7, wait: 6000, consent: true, wappalyzer: true, content: true, contentPosts: 20, ads: true, adsCountry: 'US', seo: true, seoLocation: 2840, seoLanguage: 'en', pages: [], out: null };
 let target = null;
 for (let i = 0; i < args.length; i++) {
   const a = args[i];
@@ -53,13 +55,15 @@ for (let i = 0; i < args.length; i++) {
   else if (a === '--no-wappalyzer') opts.wappalyzer = false;
   else if (a === '--no-seo') opts.seo = false;
   else if (a === '--no-ads') opts.ads = false;
+  else if (a === '--no-content') opts.content = false;
+  else if (a === '--content-posts') opts.contentPosts = Number(args[++i]);
   else if (a === '--ads-country') opts.adsCountry = args[++i].toUpperCase();
   else if (a === '--seo-location') opts.seoLocation = Number(args[++i]);
   else if (a === '--seo-language') opts.seoLanguage = args[++i];
   else if (!a.startsWith('--')) target = a;
 }
 if (!target) {
-  console.error('Usage: node scripts/collect.mjs <domain-or-url> [--out dir] [--pages url,url] [--max-pages 7] [--wait 6000] [--no-consent] [--no-wappalyzer] [--no-seo] [--seo-location 2840] [--seo-language en] [--no-ads] [--ads-country US]');
+  console.error('Usage: node scripts/collect.mjs <domain-or-url> [--out dir] [--pages url,url] [--max-pages 7] [--wait 6000] [--no-consent] [--no-wappalyzer] [--no-seo] [--seo-location 2840] [--seo-language en] [--no-ads] [--ads-country US] [--no-content] [--content-posts 20]');
   process.exit(1);
 }
 
@@ -230,6 +234,16 @@ const sitemap = summariseSitemap(sitemapRaw);
 
 const socialHosts = /(^|\.)(x\.com|twitter\.com|linkedin\.com|youtube\.com|facebook\.com|instagram\.com|tiktok\.com|github\.com|discord\.(gg|com)|threads\.net|bsky\.app|reddit\.com|medium\.com|pinterest\.com)$/;
 const socials = [...new Set((home.links || []).filter((l) => { try { const u = new URL(l.href); return socialHosts.test(u.hostname) && u.pathname.length > 1 && !/\/(share|intent|sharer)/.test(u.pathname); } catch { return false; } }).map((l) => l.href.replace(/\?.*$/, '')))];
+
+// Content sample: newest posts plus top search-traffic posts (search data arrives in parallel).
+const seoForContent = await seoJob;
+const content = opts.content
+  ? await collectContent({ context, origin: new URL(home.url || startUrl.href).origin, siteRoot, homePage: home, sitemapUrls: sitemapRaw.urls, seoPages: seoForContent.pages || [], recent: opts.contentPosts, log }).catch((e) => ({ source: 'error', error: e.message, posts: [] }))
+  : { skipped: 'disabled with --no-content', posts: [] };
+if (!content.skipped) {
+  await savePosts(content, outDir, slugify);
+  content.cadence = cadence(content);
+}
 
 const ads = opts.ads
   ? await collectAds({ browser, userAgent, domain: siteHost, homeTitle: home.title, socials, country: opts.adsCountry, outDir, log })
@@ -519,6 +533,7 @@ const collected = {
   sitemap,
   seo,
   ads,
+  content,
   captureRegion,
   wordpress: { plugins: [...wordpress.plugins].sort(), themes: [...wordpress.themes].sort() },
   wappalyzer: Array.isArray(wappalyzer) ? wappalyzer.map((w) => ({ url: w.url, error: w.error || null, count: (w.technologies || []).length })) : wappalyzer,
@@ -584,6 +599,7 @@ function buildSummary(c) {
   if (s.lastmodByMonth.length) L.push(`- URLs modified per month (last 12): ${s.lastmodByMonth.map((x) => `${x.month}: ${x.count}`).join(', ')}`);
   if (s.recent.length) L.push(`- Most recently modified: ${s.recent.slice(0, 10).map((x) => `${new URL(x.url).pathname} (${x.lastmod.slice(0, 10)})`).join(', ')}`);
   L.push('');
+  L.push(...contentSummary(c.content));
   L.push(...adsSummary(c.ads));
   if (c.seo.skipped) {
     L.push('## Search data', '', `Not collected (${c.seo.skipped}).`, '');
@@ -632,3 +648,22 @@ function adsSummary(a) {
   L.push('');
   return L;
 }
+
+function contentSummary(ct) {
+  if (!ct || ct.skipped) return ['## Content sample', '', `Not collected (${ct?.skipped || 'unknown'}).`, ''];
+  if (!ct.posts.length) return ['## Content sample', '', `No blog or article content found${ct.error ? ` (${ct.error})` : ''}.`, ''];
+  const ok = ct.posts.filter((p) => !p.error);
+  const L = ['## Content sample', '', `${ok.length} posts read (source: ${ct.source === 'feed' ? `feed ${ct.feed}` : 'sitemap, so dates are last-modified, not published'}). Full text in content/.`];
+  if (ct.cadence?.length) L.push(`- Posts per month by publish date (sample only): ${ct.cadence.map((m) => `${m.month}: ${m.count}`).join(', ')}`);
+  const authors = {};
+  for (const p of ok) if (p.author) authors[p.author] = (authors[p.author] || 0) + 1;
+  if (Object.keys(authors).length) L.push(`- Authors: ${Object.entries(authors).sort((a, b) => b[1] - a[1]).map(([a, n]) => `${a} (${n})`).join(', ')}`);
+  L.push('', '| Published | Title | Words | Search visits | CTAs | Lead form | Product links | File |', '|---|---|---|---|---|---|---|---|');
+  for (const p of ct.posts) {
+    if (p.error) { L.push(`| | ${p.url} (FAILED: ${p.error}) | | | | | | |`); continue; }
+    L.push(`| ${p.published || '?'} | ${(p.title || '').replace(/\|/g, '/').slice(0, 80)} | ${p.words} | ${p.etv ? `~${p.etv}` : ''} | ${(p.ctas || []).slice(0, 3).join('; ')} | ${p.leadForms?.length ? 'yes' : ''} | ${(p.productLinks || []).slice(0, 3).join(' ')} | ${p.file || ''} |`);
+  }
+  L.push('');
+  return L;
+}
+

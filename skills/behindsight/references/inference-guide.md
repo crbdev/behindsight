@@ -71,6 +71,18 @@ All of these are modeled estimates. Compare them within a report; don't quote th
 | WordPress plugin list (from asset paths) | The site's CMS setup, including marketing plugins (forms, SEO, popups, translation) | Only plugins that load assets on the captured pages appear |
 | Shopify apps (reviews, loyalty, BNPL, returns, SMS) | The e-commerce marketing stack | |
 
+## Content
+
+| Signal | Supports | Caveat |
+|---|---|---|
+| Most sampled posts are how-tos and listicles on broad topics | Top-of-funnel SEO content | Check whether they link to the product |
+| Many comparison and "alternatives" posts | Bottom-of-funnel content aimed at buyers who are already comparing | |
+| Posts end in a demo or trial CTA, or carry a gated download form | Content is built to generate leads | A sitewide footer CTA isn't the same as a post-specific one |
+| Mostly announcements and press releases | The blog is a newsroom, not an acquisition channel | |
+| Many authors, or authors outside marketing (founders, engineers, customers) | A content program with contributors | Author fields can be missing or generic |
+| Regular publish dates in the feed | A steady cadence | Only the sample is counted; don't state total output |
+| Top-traffic posts are off-topic for the product | Traffic that's unlikely to convert | Compare with what the recent posts cover: a shift in strategy shows up here |
+
 ## Funnel
 
 | Signal | Supports |

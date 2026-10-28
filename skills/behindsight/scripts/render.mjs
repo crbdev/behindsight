@@ -28,10 +28,11 @@ const SECTIONS = [
   { key: 'positioning', id: 'positioning', title: 'Positioning and messaging' },
   { key: 'acquisition', id: 'acquisition', title: 'Acquisition channels' },
   { key: 'funnel', id: 'funnel', title: 'Conversion funnel' },
-  { key: 'retention', id: 'retention', title: 'Retention and lifecycle' }
+  { key: 'retention', id: 'retention', title: 'Retention and lifecycle' },
+  { key: 'content_strategy', id: 'content-strategy', title: 'Content strategy', optional: true }
 ];
 const STATUSES = ['seen', 'inferred', 'unknown'];
-const EVIDENCE_TYPES = ['page', 'network', 'stack', 'sitemap', 'event', 'seo', 'ads', 'investigation', 'external'];
+const EVIDENCE_TYPES = ['page', 'network', 'stack', 'sitemap', 'event', 'seo', 'ads', 'content', 'investigation', 'external'];
 
 // ---------- validation ----------
 
@@ -46,6 +47,7 @@ for (const [i, g] of (findings.at_a_glance || []).entries()) {
 }
 for (const s of SECTIONS) {
   const claims = findings.sections?.[s.key];
+  if (s.optional && !claims) continue;
   need(Array.isArray(claims) && claims.length, `sections.${s.key} needs at least one claim (use status "unknown" when the evidence says nothing)`);
   for (const [i, c] of (claims || []).entries()) {
     const at = `sections.${s.key}[${i}]`;
@@ -80,8 +82,10 @@ function claimHtml(c) {
 
 function sectionHtml({ key, id, title }) {
   const claims = findings.sections[key];
+  if (!claims) return '';
+  const extra = key === 'content_strategy' ? contentStrategyPanel() : '';
   const counts = STATUSES.map((s) => [s, claims.filter((c) => c.status === s).length]).filter(([, n]) => n).map(([s, n]) => `${n} ${s}`).join(' · ');
-  return `<section id="${id}"><div class="section-head"><h2>${esc(title)}</h2><span class="count">${counts}</span></div><ul class="claims">${claims.map(claimHtml).join('')}</ul></section>`;
+  return `<section id="${id}"><div class="section-head"><h2>${esc(title)}</h2><span class="count">${counts}</span></div><ul class="claims">${claims.map(claimHtml).join('')}</ul>${extra}</section>`;
 }
 
 // ---------- stack ----------
@@ -168,6 +172,36 @@ function eventsHtml() {
     : '';
   const detail = `<details><summary>Every event by page (${list.length})</summary><div class="table-wrap"><table><thead><tr><th>Platform</th><th>Event</th><th>Page</th></tr></thead><tbody>${list.map((e) => `<tr><td>${esc(e.platform)}</td><td><code>${esc(e.name)}</code></td><td>${link(e.page)}</td></tr>`).join('')}</tbody></table></div></details>`;
   return `<h3>Tracking events</h3><p class="note">Custom and conversion events show what the company measures beyond page views.</p>${customTable}${routineLine}${detail}`;
+}
+
+// ---------- content strategy (sampled posts) ----------
+
+const contentData = collected.content && !collected.content.skipped && collected.content.posts?.length ? collected.content : null;
+function contentStrategyPanel() {
+  if (!contentData) return '';
+  const ok = contentData.posts.filter((p) => !p.error);
+  const norm = (u) => String(u).replace(/[?#].*$/, '').replace(/\/$/, '').replace(/^https?:\/\/(www\.)?/, '').toLowerCase();
+  const labels = new Map((findings.content_posts || []).map((c) => [norm(c.url), c]));
+  const sourceNote = contentData.source === 'feed' ? 'the blog feed' : contentData.source === 'blog index' ? "the blog's index page" : 'the sitemap (dates are last-modified, not published)';
+  const parts = [`<p class="note">${ok.length} posts read: the newest from ${sourceNote}, plus the posts earning the most estimated search traffic.</p>`];
+  const tally = (key) => {
+    const t = {};
+    for (const c of labels.values()) if (c[key]) t[c[key]] = (t[c[key]] || 0) + 1;
+    return Object.entries(t).sort((a, b) => b[1] - a[1]);
+  };
+  const chipsFor = (key, label) => { const t = tally(key); return t.length ? `<div class="chips"><span class="weak mono">${label}</span>${t.map(([k, n]) => `<span class="stat">${esc(k)} <b>${n}</b></span>`).join('')}</div>` : ''; };
+  parts.push(chipsFor('format', 'Formats') + chipsFor('stage', 'Funnel stage') + chipsFor('topic', 'Topics'));
+  const cad = contentData.cadence || [];
+  if (cad.length >= 2) {
+    const max = Math.max(...cad.map((m) => m.count));
+    parts.push(`<h3>Sampled posts by publish month</h3><p class="note">Counts within the sample only, not total output.</p><div class="bars">${cad.slice(-12).map((m) => `<div class="bar-row"><span class="label">${esc(m.month)}</span><div class="bar-track"><div class="bar-fill" style="width:${((m.count / max) * 100).toFixed(1)}%"></div></div><span class="value">${m.count}</span></div>`).join('')}</div>`);
+  }
+  const rows = ok.map((p) => {
+    const c = labels.get(norm(p.url)) || {};
+    return `<tr><td class="mono weak">${esc(p.published || '?')}</td><td>${link(p.url, p.title || p.url)}${p.reason === 'top traffic' || p.reason === 'recent and top traffic' ? ' <span class="chip src">top traffic</span>' : ''}</td><td>${esc(c.format || '')}</td><td>${esc(c.stage || '')}</td><td>${esc(c.cta || (p.leadForms?.length ? 'lead form' : p.ctas?.[0] || ''))}</td><td class="num">${fmt(p.words)}</td><td class="num">${p.etv ? fmt(p.etv) : ''}</td></tr>`;
+  }).join('');
+  parts.push(`<h3>Posts read</h3><div class="table-wrap"><table><thead><tr><th>Published</th><th>Post</th><th>Format</th><th>Stage</th><th>Asks readers to</th><th class="num">Words</th><th class="num">Est. visits</th></tr></thead><tbody>${rows}</tbody></table></div>`);
+  return parts.join('');
 }
 
 // ---------- content (sitemap) ----------
@@ -344,7 +378,7 @@ function checksHtml() {
 // ---------- page ----------
 
 const nav = [
-  ...SECTIONS.map((s) => [s.id, s.title]),
+  ...SECTIONS.filter((s) => findings.sections[s.key]).map((s) => [s.id, s.title]),
   ['stack', 'Marketing stack'],
   ...(adsData ? [['ads', 'Advertising']] : []),
   ['content', 'Content footprint'],

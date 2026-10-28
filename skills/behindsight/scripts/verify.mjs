@@ -159,6 +159,23 @@ function checkEvidence(e) {
       if (soft.length) warnings.push(`percentages not in the data (may be computed): ${soft.join(', ')}`);
       break;
     }
+    case 'content': {
+      const posts = collected.content?.posts || [];
+      const post = posts.find((x) => normUrl(x.url) === normUrl(ref));
+      if (!post) {
+        if (!/sample|posts|content/i.test(ref)) problems.push(`post ${ref} isn't in the content sample`);
+        const { hard } = splitPercent(unmatchedNumbers(detail, collected.content || {}), detail);
+        if (hard.length) problems.push(`content numbers don't match: ${hard.join(', ')}`);
+        break;
+      }
+      let text = loose(JSON.stringify(post));
+      if (post.file && existsSync(path.join(dir, post.file))) text += ' ' + loose(readFileSync(path.join(dir, post.file), 'utf8'));
+      for (const q of quotes(detail)) {
+        const parts = q.split(/\s*(?:\.\.\.|…)\s*/).filter((x) => x.length >= 8);
+        if (!parts.every((part) => text.includes(loose(part)))) problems.push(`quote not found in post ${ref}: "${q.slice(0, 80)}"`);
+      }
+      break;
+    }
     case 'investigation': {
       const inv = (collected.investigations || []).find((x) => x.id === ref.trim().split(/\s/)[0]);
       if (!inv) { problems.push(`investigation ${ref} doesn't exist`); break; }
@@ -200,10 +217,17 @@ for (const [key, claims] of Object.entries(findings.sections || {})) {
   });
 }
 
+for (const [i, c] of (findings.content_posts || []).entries()) {
+  if (!(collected.content?.posts || []).some((x) => normUrl(x.url) === normUrl(c.url))) {
+    results.push({ section: 'content_posts', index: i, text: c.url, status: 'label', problems: [`post ${c.url} isn't in the content sample`], warnings: [] });
+    problemCount++;
+  }
+}
+
 const summary = {
   checkedAt: new Date().toISOString(),
   claims: results.length,
-  citations: results.reduce((n, r) => n + (findings.sections[r.section][r.index].evidence || []).length, 0),
+  citations: results.reduce((n, r) => n + (findings.sections[r.section]?.[r.index]?.evidence || []).length, 0),
   problems: problemCount,
   warnings: warningCount
 };
