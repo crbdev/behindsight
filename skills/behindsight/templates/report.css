@@ -92,6 +92,8 @@ section { display: grid; gap: 18px; scroll-margin-top: 24px; }
 .section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; border-bottom: 2px solid var(--ink); padding-bottom: 8px; }
 .section-head h2 { font-size: 1.6rem; font-stretch: 85%; font-weight: 700; }
 .section-head .count { font-family: var(--font-mono); font-size: 0.75rem; color: var(--ink-soft); }
+.takeaway { margin: 0; padding: 14px 16px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 4px; font-size: 1.02rem; font-weight: 500; max-width: 70ch; display: grid; gap: 4px; }
+.takeaway span { font-family: var(--font-mono); font-size: 0.68rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); }
 .lede { margin: 0; color: var(--ink-soft); max-width: 65ch; font-size: 0.95rem; }
 
 .claims { list-style: none; margin: 0; padding: 0; display: grid; }

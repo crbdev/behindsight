@@ -225,6 +225,19 @@ for (const [i, c] of (findings.content_posts || []).entries()) {
   }
 }
 
+// Summaries condense their section; a number that appears nowhere in the section is a sign of a new claim.
+const DATA_SECTION_SOURCES = { stack: () => collected.stack, ads: () => collected.ads, content_footprint: () => collected.sitemap, search: () => collected.seo };
+for (const [key, text] of Object.entries(findings.section_summaries || {})) {
+  const source = findings.sections?.[key] || (DATA_SECTION_SOURCES[key] ? DATA_SECTION_SOURCES[key]() : null);
+  if (!source) continue;
+  const pool = numbersIn([source, key in (findings.sections || {}) ? [] : findings.sections]);
+  const missing = numbersWritten(text).filter(({ n, approx }) => !pool.some((p) => close(n, p, approx)));
+  if (missing.length) {
+    results.push({ section: 'section_summaries', index: key, text, status: 'summary', problems: [`summary of ${key} has numbers that aren't in that section: ${missing.map((m) => m.raw).join(', ')}`], warnings: [] });
+    problemCount++;
+  }
+}
+
 const summary = {
   checkedAt: new Date().toISOString(),
   claims: results.length,

@@ -20,6 +20,11 @@
     "retention": [ /* claims */ ],
     "content_strategy": [ /* claims; include when content/ has posts */ ]
   },
+  "section_summaries": {
+    "business_model": "One or two sentences: the gist of this section, written last, from its own claims.",
+    "positioning": "...", "acquisition": "...", "funnel": "...", "retention": "...", "content_strategy": "...",
+    "stack": "...", "ads": "...", "content_footprint": "...", "search": "..."
+  },
   "content_posts": [
     { "url": "https://acme.com/blog/how-to-plan-a-sprint", "topic": "Project planning", "format": "how-to", "stage": "awareness", "cta": "free trial" }
   ],
@@ -72,6 +77,16 @@ Aim for 3 to 7 claims per section. Use `unknown` claims for important questions 
 `host_notes` identifies third-party hosts the collector didn't recognize. `confidence` (high, medium or low) is optional; use low when the identification is a guess from the URL alone.
 
 For e-commerce companies, at-a-glance labels like Offer, Price range, Shipping and returns, Primary CTA, Live ads, Organic search and Stack maturity work better than SaaS labels.
+
+## section_summaries
+
+Every section opens with an "In short" summary, so readers get the gist before the detail. Write one for each claims section you include, and for each data section the report shows: `stack` (marketing stack), `ads` (advertising, when ad libraries were checked), `content_footprint` (sitemap) and `search` (organic search, when collected). The renderer refuses to build the report without them.
+
+- One or two sentences, at most about 40 words. Lead with the conclusion a marketer would act on, not a list of facts.
+- Condense the section's own claims. Don't introduce anything the section doesn't support, and keep the hedges: if the claims are inferred or low confidence, the summary says "likely" or "appears". For data sections, summarize what the data shows and what your claims elsewhere make of it.
+- The citation check flags numbers in a summary that don't appear in that section.
+
+Example for a content strategy section: "Gong's blog is a demo-generation engine built on its own call data, publishing weekly thought leadership for revenue leaders. Its search traffic still comes from older generic sales guides, not the new posts."
 
 ## content_posts
 

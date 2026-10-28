@@ -20,7 +20,7 @@ Read `references/report-schema.md` and `references/inference-guide.md` in the sk
 4. **Confidence.** For inferred claims, is the confidence level fair given how many signals support it and whether any contradict it?
 5. **Contradictions.** Does anything else in the evidence contradict the claim? Check the obvious places: other pages, the stack, the network log.
 
-Also check `at_a_glance` items and the `summary` against the claims they condense.
+Also check `at_a_glance` items, the `summary` and every `section_summaries` entry against the claims they condense: a summary must not state anything its section doesn't support, or drop a hedge ("likely", low confidence) the claims carry.
 
 Don't judge writing style, and don't suggest new findings. Only accuracy.
 

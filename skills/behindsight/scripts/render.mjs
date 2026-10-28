@@ -61,6 +61,16 @@ for (const s of SECTIONS) {
     }
   }
 }
+// Every section opens with a short summary so the reader gets the gist before the detail.
+const summaries = findings.section_summaries || {};
+const dataSections = [
+  ['stack', true],
+  ['ads', !!(collected.ads && !collected.ads.skipped)],
+  ['content_footprint', !!collected.sitemap?.totalUrls],
+  ['search', !!(collected.seo && !collected.seo.skipped)]
+];
+for (const s of SECTIONS) if (findings.sections?.[s.key] && !summaries[s.key]) errors.push(`section_summaries.${s.key} is required: one or two sentences giving the section's gist`);
+for (const [key, shown] of dataSections) if (shown && !summaries[key]) errors.push(`section_summaries.${key} is required: one or two sentences giving the section's gist`);
 if (errors.length) {
   console.error(`findings.json has ${errors.length} problem(s):\n- ${errors.join('\n- ')}`);
   process.exit(1);
@@ -72,6 +82,7 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 const isUrl = (s) => /^https?:\/\//i.test(String(s));
 const shortUrl = (s) => { try { const u = new URL(s); return (u.hostname.replace(/^www\./, '') + u.pathname).replace(/\/$/, '') + (u.search ? '?…' : ''); } catch { return s; } };
 const link = (s, text) => (isUrl(s) ? `<a href="${esc(s)}" target="_blank" rel="noopener noreferrer">${esc(text ?? shortUrl(s))}</a>` : esc(text ?? s));
+const summaryHtml = (key) => (summaries[key] ? `<p class="takeaway"><span>In short</span>${esc(summaries[key])}</p>` : '');
 const chip = (status) => `<span class="chip ${esc(status)}">${esc(status)}</span>`;
 const fmt = (n) => Number(n).toLocaleString('en-US');
 
@@ -85,7 +96,7 @@ function sectionHtml({ key, id, title }) {
   if (!claims) return '';
   const extra = key === 'content_strategy' ? contentStrategyPanel() : '';
   const counts = STATUSES.map((s) => [s, claims.filter((c) => c.status === s).length]).filter(([, n]) => n).map(([s, n]) => `${n} ${s}`).join(' · ');
-  return `<section id="${id}"><div class="section-head"><h2>${esc(title)}</h2><span class="count">${counts}</span></div><ul class="claims">${claims.map(claimHtml).join('')}</ul>${extra}</section>`;
+  return `<section id="${id}"><div class="section-head"><h2>${esc(title)}</h2><span class="count">${counts}</span></div>${summaryHtml(key)}<ul class="claims">${claims.map(claimHtml).join('')}</ul>${extra}</section>`;
 }
 
 // ---------- stack ----------
@@ -141,7 +152,7 @@ function stackHtml() {
   const other = collected.otherTechnologies?.length
     ? `<details><summary>${collected.otherTechnologies.length} infrastructure technologies</summary><p class="note">${collected.otherTechnologies.map((t) => `${esc(t.name)} <span class="weak">(${esc(t.category)})</span>`).join(', ')}</p></details>`
     : '';
-  return `<section id="stack"><div class="section-head"><h2>Marketing stack</h2><span class="count">${collected.stack.length} tools · ${confirmed} confirmed by both sources</span></div>
+  return `<section id="stack"><div class="section-head"><h2>Marketing stack</h2><span class="count">${collected.stack.length} tools · ${confirmed} confirmed by both sources</span></div>${summaryHtml('stack')}
 <p class="lede">"Network" means the browser loaded or called the tool during the visit. "Code match" means a Wappalyzer pattern matched the page code, which is weaker evidence. "Network + code" means both agree.</p>
 <div class="table-wrap"><table><thead><tr><th>Technology</th><th>Detected by</th><th>Public IDs</th><th>Pages</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>${fp}${events}${wp}${unknownHtml}${other}</section>`;
 }
@@ -227,7 +238,7 @@ function contentHtml() {
   } else {
     months = `<p class="note">The sitemap has no lastmod dates, so publishing pace can't be read from it.</p>`;
   }
-  return `<section id="content"><div class="section-head"><h2>Content footprint</h2><span class="count">${fmt(s.totalUrls)} URLs${s.truncated ? ' (truncated)' : ''}</span></div>
+  return `<section id="content"><div class="section-head"><h2>Content footprint</h2><span class="count">${fmt(s.totalUrls)} URLs${s.truncated ? ' (truncated)' : ''}</span></div>${summaryHtml('content_footprint')}
 <h3>Largest sections</h3><div class="bars">${bars}</div>
 <h3>Page types</h3><div class="chips">${patterns || '<span class="note">No recognized page types.</span>'}</div>${locales}${months}</section>`;
 }
@@ -264,7 +275,7 @@ function searchHtml() {
     ? `<h3>Search competitors</h3><p class="note">Domains ranking for ${esc(collected.domain)}'s top ${seo.competitorKeywords.length} non-branded keywords, by visibility. Large platforms are left out.</p><div class="table-wrap"><table><thead><tr><th>Domain</th><th class="num">Keywords ranked</th><th class="num">Avg. position</th><th class="num">Est. visits on these keywords</th></tr></thead><tbody>${seo.competitors.map((c) => `<tr><td>${link(`https://${c.domain}`, c.domain)}</td><td class="num">${fmt(c.keywords)}</td><td class="num">${esc(c.avgPosition)}</td><td class="num">${fmt(c.etv)}</td></tr>`).join('')}</tbody></table></div>`
     : '';
   const problems = seo.errors?.length ? `<p class="note warn">Some search data couldn't be fetched: ${esc(seo.errors.join('; '))}</p>` : '';
-  return `<section id="search"><div class="section-head"><h2>Organic search</h2><span class="count">Google ${esc(seo.location)} · ${esc(seo.capturedAt.slice(0, 10))}</span></div>
+  return `<section id="search"><div class="section-head"><h2>Organic search</h2><span class="count">Google ${esc(seo.location)} · ${esc(seo.capturedAt.slice(0, 10))}</span></div>${summaryHtml('search')}
 <p class="lede">Estimates from DataForSEO Labs. Visits are modeled from rankings and typical click-through rates, so treat them as directional and compare them within this report.</p>
 ${problems}<div class="chips">${stats}</div>${sections}${pages}${keywords}${comps}</section>`;
 }
@@ -334,7 +345,7 @@ async function adsHtml() {
   }
   blocks.push(`<div class="adblock"><div class="adhead"><h3>LinkedIn</h3>${statusChip(l.status)}</div>${lBody}</div>`);
 
-  return `<section id="ads"><div class="section-head"><h2>Advertising</h2><span class="count">Public ad libraries · ${esc(adsData.country)} · ${esc(adsData.capturedAt.slice(0, 10))}</span></div>
+  return `<section id="ads"><div class="section-head"><h2>Advertising</h2><span class="count">Public ad libraries · ${esc(adsData.country)} · ${esc(adsData.capturedAt.slice(0, 10))}</span></div>${summaryHtml('ads')}
 <p class="lede">Ads the company's own advertiser accounts are running, from Google's Ads Transparency Center, Meta's Ad Library and LinkedIn's Ad Library. Libraries show ads, not spend.</p>${blocks.join('')}</section>`;
 }
 

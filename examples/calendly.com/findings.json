@@ -591,5 +591,16 @@
         "status": "unknown"
       }
     ]
+  },
+  "section_summaries": {
+    "business_model": "Calendly runs a hybrid model: a free plan and self-serve per-seat plans feed a sales-led Enterprise tier from $15k a year. Payments are a newer product line, but whether Calendly takes a fee on them isn't visible.",
+    "positioning": "Calendly is repositioning from scheduling toward AI-assisted meeting work while keeping \"#1 scheduling tool\" as its anchor, with scale and small-business founder stories as proof. In search, Square, Zapier and Setmore contest its category terms more than Doodle does.",
+    "acquisition": "Acquisition looks mostly brand-led: organic search driven by brand demand, plus a B2B account-targeting layer (Clearbit, G2 intent, LinkedIn ads). Google and Meta show no live US ads, and the large blog earns little search traffic.",
+    "funnel": "Free signup is the main conversion, with \"Talk to sales\" and a short Marketo form as the second path. Statsig experiments run across the site, so pages can differ between visits.",
+    "retention": "Retention runs on a mature data setup: Segment routed through Calendly's own domain, Amplitude product analytics and Marketo nurturing, backed by Intercom chat and a large help center.",
+    "stack": "A mature B2B stack: first-party Segment, Statsig experiments, Marketo and Intercom, Clearbit and G2 intent for account targeting, and Google Ads and LinkedIn tags.",
+    "ads": "Only LinkedIn's library lists Calendly ads; Google and Meta show none in the US, even though the Google Ads tag is installed.",
+    "content_footprint": "The site is dominated by help articles and the blog, followed by integration pages and customer stories.",
+    "search": "Organic search is large, about 276,000 estimated monthly US visits, but mostly brand demand: branded searches drive 69% of top-keyword traffic, and the homepage takes 73% of it."
   }
 }
