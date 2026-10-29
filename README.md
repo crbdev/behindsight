@@ -107,6 +107,8 @@ Behindsight reads what any visitor's browser receives: public pages, public ad l
 - Google Tag Manager container parsing: list the tags and conversion events a container defines
 - Review sites
 - Funnel tracing with [REA](https://github.com/morluto/rea): follow a signup click to every request it fires
+- Fewer first-draft errors: have the collector label installed ad tags as "installed" (not spend) unless an ad library confirms ads, and carry the basis of search shares ("of the top 100 pages") into the numbers themselves
+- A subagent that reads the sampled blog posts and returns labels and themes, so the main agent's context stays lean and runs cost less
 
 ## License
 
