@@ -4,7 +4,7 @@ See what's behind any company's website. Behindsight is an agent skill that reve
 
 ![The top of a Behindsight report on calendly.com: summary, evidence labels and highlights](docs/report-screenshot.png)
 
-See the full [Calendly example report](examples/calendly.com/report.html). Download it and open it in a browser, since GitHub shows HTML files as source.
+See the full [Calendly example report](https://caseyrb.com/behindsight/calendly/). The files behind it are in [`examples/calendly.com/`](examples/calendly.com/).
 
 ## What it collects
 
@@ -81,7 +81,7 @@ All flagged items were corrected before the example was published. Round 3 cover
 
 ## The example
 
-`examples/calendly.com/` holds a real run: the report, the findings, the citation check, the reviewer's fact-check and the collected data summary. The raw captures it was built from (copies of Calendly's pages and its full network log) aren't included, so the citation check can't be rerun on this folder as published.
+`examples/calendly.com/` holds a real run: the report ([view it live](https://caseyrb.com/behindsight/calendly/)), the findings, the citation check, the reviewer's fact-check and the collected data summary. The raw captures it was built from (copies of Calendly's pages and its full network log) aren't included, so the citation check can't be rerun on this folder as published.
 
 ## Responsible use
 
