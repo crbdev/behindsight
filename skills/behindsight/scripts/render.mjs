@@ -32,7 +32,7 @@ const SECTIONS = [
   { key: 'content_strategy', id: 'content-strategy', title: 'Content strategy', optional: true }
 ];
 const STATUSES = ['seen', 'inferred', 'unknown'];
-const EVIDENCE_TYPES = ['page', 'network', 'stack', 'sitemap', 'event', 'seo', 'ads', 'content', 'jobs', 'investigation', 'external'];
+const EVIDENCE_TYPES = ['page', 'network', 'stack', 'sitemap', 'event', 'seo', 'ads', 'content', 'jobs', 'history', 'investigation', 'external'];
 
 // ---------- validation ----------
 
@@ -68,7 +68,8 @@ const dataSections = [
   ['ads', !!(collected.ads && !collected.ads.skipped)],
   ['content_footprint', !!collected.sitemap?.totalUrls],
   ['search', !!(collected.seo && !collected.seo.skipped)],
-  ['jobs', collected.jobs?.status === 'found']
+  ['jobs', collected.jobs?.status === 'found'],
+  ['history', !!collected.history?.pages?.some((p) => p.rows?.length)]
 ];
 for (const s of SECTIONS) if (findings.sections?.[s.key] && !summaries[s.key]) errors.push(`section_summaries.${s.key} is required: one or two sentences giving the section's gist`);
 for (const [key, shown] of dataSections) if (shown && !summaries[key]) errors.push(`section_summaries.${key} is required: one or two sentences giving the section's gist`);
@@ -360,7 +361,7 @@ function jobsHtml() {
   if (!j || j.skipped) return '';
   if (j.status !== 'found') return `<section id="hiring"><div class="section-head"><h2>Hiring</h2></div><p class="note">${esc(j.note || j.error || 'No job board found.')}</p></section>`;
   const bars = (rows) => { const max = Math.max(1, ...rows.map((r) => r.count)); return `<div class="bars">${rows.map((r) => `<div class="bar-row"><span class="label" title="${esc(r.name)}">${esc(r.name)}</span><div class="bar-track"><div class="bar-fill" style="width:${((r.count / max) * 100).toFixed(1)}%"></div></div><span class="value">${fmt(r.count)}</span></div>`).join('')}</div>`; };
-  const roles = [['marketing', 'Marketing'], ['sales', 'Sales'], ['customer', 'Customer success and support'], ['other', 'Everything else']].map(([k, label]) => ({ name: label, count: j.byRole[k] || 0 }));
+  const roles = [['marketing', 'Marketing'], ['sales', 'Sales'], ['customer', 'Customer success'], ['other', 'Everything else']].map(([k, label]) => ({ name: label, count: j.byRole[k] || 0 }));
   const gtm = j.postings.filter((p) => p.role !== 'other');
   const table = gtm.length ? `<details><summary>Marketing, sales and customer roles (${gtm.length})</summary><table><thead><tr><th>Role</th><th>Title</th><th>Team</th><th>Location</th><th>Posted</th><th>Pay</th></tr></thead><tbody>${gtm.map((p) => `<tr><td>${esc(p.role)}</td><td>${link(p.url, p.title)}</td><td>${esc([p.department, p.team].filter(Boolean).join(' / '))}</td><td>${esc(p.location || '')}</td><td class="mono">${esc(p.posted || '')}</td><td>${esc(p.compensation || '')}</td></tr>`).join('')}</tbody></table></details>` : '';
   const tools = j.toolsMentioned.length ? `<h3>Tools named in job posts</h3><p class="note">How many open posts name each tool. A post naming a tool shows the team works with it or wants experience in it; it isn't an inventory of the stack.</p><div class="chips">${j.toolsMentioned.slice(0, 18).map((t) => `<span class="stat">${esc(t.tool)} <b>${fmt(t.posts)}</b></span>`).join('')}</div>` : '';
@@ -368,6 +369,30 @@ function jobsHtml() {
 <p class="note">Open roles from the company's public ${link(j.boardUrl, `${j.ats} board`)}, matched because: ${esc(j.match)}. Roles are grouped by title, department and team.</p>
 <div class="chips"><span class="stat">Open roles <b>${fmt(j.openRoles)}</b></span>${j.datesShown ? `<span class="stat">Posted in last 30 days <b>${fmt(j.postedLast30Days)}</b></span><span class="stat">Last 90 days <b>${fmt(j.postedLast90Days)}</b></span>` : ''}${j.remoteShare !== null ? `<span class="stat">Remote <b>${j.remoteShare}%</b></span>` : ''}</div>
 <h3>By role</h3>${bars(roles)}<h3>By department</h3>${bars(j.byDepartment.slice(0, 8))}${tools}${table}</section>`;
+}
+
+// ---------- changes over time (Wayback Machine) ----------
+
+function historyHtml() {
+  const h = collected.history;
+  if (!h || h.skipped || !h.pages?.some((p) => p.rows?.length)) return '';
+  const blocks = h.pages.filter((p) => p.rows?.length).map((p) => {
+    const rows = [...p.rows, p.live].filter((r) => r && !r.error);
+    const table = `<table><thead><tr><th>Date</th><th>Headline</th><th>Prices on the page</th><th>Tools in the HTML</th></tr></thead><tbody>${rows.map((r) => `<tr${r.thin ? ' class="weak"' : ''}><td class="mono">${r.live ? `${esc(r.date)} (live)` : link(r.archiveUrl, r.date)}</td><td>${r.thin ? '<span class="weak">little text in this copy</span>' : esc(r.h1[0] || r.title)}</td><td class="mono">${esc(r.prices.slice(0, 6).join(', '))}</td><td>${esc(r.tools.join(', '))}</td></tr>`).join('')}</tbody></table>`;
+    const changes = p.changes.filter((c) => c.title || c.h1 || c.prices || c.ctas || c.tools).map((c) => {
+      const bits = [];
+      if (c.h1) bits.push(`Headline: <span class="weak">${esc(c.h1.before || '(none)')}</span> → <b>${esc(c.h1.after || '(none)')}</b>`);
+      else if (c.title) bits.push(`Title: <span class="weak">${esc(c.title.before)}</span> → <b>${esc(c.title.after)}</b>`);
+      const both = (a, b) => [a, b].filter(Boolean).join('; ');
+      if (c.prices) bits.push(both(c.prices.added.length && `Prices added ${esc(c.prices.added.join(', '))}`, c.prices.removed.length && `prices removed ${esc(c.prices.removed.join(', '))}`));
+      if (c.ctas) bits.push(both(c.ctas.added.length && `CTAs added "${esc(c.ctas.added.join('", "'))}"`, c.ctas.removed.length && `CTAs removed "${esc(c.ctas.removed.join('", "'))}"`));
+      if (c.tools) bits.push(both(c.tools.added.length && `Tools added to the HTML: ${esc(c.tools.added.join(', '))}`, c.tools.removed.length && `no longer in the HTML: ${esc(c.tools.removed.join(', '))}`));
+      return `<li><span class="weak mono">${esc(c.from)} → ${esc(c.to)}</span> ${bits.join('; ')}</li>`;
+    }).join('');
+    return `<h3>${esc(p.kind === 'home' ? 'Homepage' : 'Pricing page')}</h3><p class="note">${fmt(p.snapshotsAvailable)} monthly snapshots in the period; ${fmt(p.rows.length)} read.</p>${table}${changes ? `<details open><summary>What changed</summary><ul class="adlist">${changes}</ul></details>` : '<p class="note">No changes between readable copies.</p>'}`;
+  }).join('');
+  return `<section id="history"><div class="section-head"><h2>Changes over time</h2><span class="count">Wayback Machine · ${esc(h.years)} years</span></div>${summaryHtml('history')}
+<p class="lede">Archived copies of the homepage and pricing page, about one per quarter, read as HTML without running scripts. Pages built by JavaScript can archive with little text. Tools are only those written into the page HTML; tags loaded by a tag manager don't show, so a tool leaving the HTML doesn't prove it was removed.</p>${blocks}</section>`;
 }
 
 // ---------- remaining sections ----------
@@ -417,6 +442,7 @@ const nav = [
   ['content', 'Content footprint'],
   ...(seo ? [['search', 'Organic search']] : []),
   ...(collected.jobs && !collected.jobs.skipped ? [['hiring', 'Hiring']] : []),
+  ...(collected.history?.pages?.some((p) => p.rows?.length) ? [['history', 'Changes over time']] : []),
   ['method', 'Method and sources']
 ];
 
@@ -456,6 +482,7 @@ ${await adsHtml()}
 ${contentHtml()}
 ${searchHtml()}
 ${jobsHtml()}
+${historyHtml()}
 ${methodHtml()}
 <footer>Generated by Behindsight ${esc(collected.version)} from public website evidence. Inferences are an analyst's reading of that evidence and can be wrong.</footer>
 </main>

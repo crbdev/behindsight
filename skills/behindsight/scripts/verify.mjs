@@ -196,6 +196,25 @@ function checkEvidence(e) {
       }
       break;
     }
+    case 'history': {
+      const h = collected.history || {};
+      const histPages = [...(h.pages || []), ...(collected.investigations || []).filter((x) => x.tool === 'history' && x.result).map((x) => x.result)];
+      const rows = histPages.flatMap((p) => [...(p.rows || []), p.live].filter(Boolean));
+      const row = rows.find((r) => r.archiveUrl && (r.archiveUrl === ref || normUrl(r.archiveUrl) === normUrl(ref)));
+      if (!row) {
+        if (!/history|wayback|archive/i.test(ref)) problems.push(`snapshot ${ref} isn't in the collected history`);
+        const blob = loose(JSON.stringify(h));
+        for (const q of quotes(detail)) if (!blob.includes(loose(q))) problems.push(`quote not found in the history data: "${q.slice(0, 80)}"`);
+        break;
+      }
+      let text = loose(JSON.stringify(row));
+      if (row.file && existsSync(path.join(dir, row.file))) text += ' ' + loose(readFileSync(path.join(dir, row.file), 'utf8'));
+      for (const q of quotes(detail)) {
+        const parts = q.split(/\s*(?:\.\.\.|…)\s*/).filter((x) => x.length >= 8);
+        if (!parts.every((part) => text.includes(loose(part)))) problems.push(`quote not found in snapshot ${ref}: "${q.slice(0, 80)}"`);
+      }
+      break;
+    }
     case 'investigation': {
       const inv = (collected.investigations || []).find((x) => x.id === ref.trim().split(/\s/)[0]);
       if (!inv) { problems.push(`investigation ${ref} doesn't exist`); break; }
@@ -245,7 +264,7 @@ for (const [i, c] of (findings.content_posts || []).entries()) {
 }
 
 // Summaries condense their section; a number that appears nowhere in the section is a sign of a new claim.
-const DATA_SECTION_SOURCES = { stack: () => collected.stack, ads: () => collected.ads, content_footprint: () => collected.sitemap, search: () => collected.seo, jobs: () => { const { texts, ...j } = collected.jobs || {}; return j; } };
+const DATA_SECTION_SOURCES = { stack: () => collected.stack, ads: () => collected.ads, content_footprint: () => collected.sitemap, search: () => collected.seo, jobs: () => { const { texts, ...j } = collected.jobs || {}; return j; }, history: () => collected.history };
 for (const [key, text] of Object.entries(findings.section_summaries || {})) {
   const source = findings.sections?.[key] || (DATA_SECTION_SOURCES[key] ? DATA_SECTION_SOURCES[key]() : null);
   if (!source) continue;

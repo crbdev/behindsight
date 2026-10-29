@@ -64,6 +64,17 @@ How an account is matched to the company: its name must match the brand (exactly
 | Many roles posted in the last 30 days | Hiring is active now | Boards drop filled roles, so old posts may be evergreen |
 | No supported job board | Nothing about hiring | Many companies use Workday or their own careers pages; mark hiring unknown, not "not hiring" |
 
+## Changes over time (Wayback Machine)
+
+| Signal | Supports | Caveat |
+|---|---|---|
+| Headline or title changed | A positioning shift (new category, audience or promise) | Date it to the window between the two copies |
+| Prices or plan names changed | A pricing change: new tier, price rise, packaging | Copies built by JavaScript may not show prices; check the copy isn't thin |
+| CTAs changed ("Start free" to "Talk to sales") | A shift between self-serve and sales-led | |
+| A tool appears in the HTML | It was added around then | Tags loaded by a tag manager never show here |
+| A tool leaves the HTML | Usually moved into a tag manager or bundle | Not evidence it was removed |
+| No archived copies, or only thin ones | Nothing | Mark history unknown |
+
 ## Search data (when DataForSEO is enabled)
 
 All of these are modeled estimates. Compare them within a report; don't quote them as the company's real traffic.

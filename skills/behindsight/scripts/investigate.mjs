@@ -9,6 +9,7 @@
 //   node scripts/investigate.mjs ads <dir> --platform google|meta|linkedin --name "<advertiser name>" [--country US]
 //   node scripts/investigate.mjs content <dir> <blog-index-url> [--posts 20]
 //   node scripts/investigate.mjs jobs <dir> <careers-page-or-job-board-url>
+//   node scripts/investigate.mjs history <dir> <url> [--years 2]
 
 import { chromium } from 'playwright';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
@@ -19,6 +20,7 @@ import { extractEvents, extractPage, loadEnv, registrableDomain, siteHelpers, sl
 import { collectAds } from './ads.mjs';
 import { cadence, collectContent, savePosts } from './content.mjs';
 import { collectJobs, findBoards } from './jobs.mjs';
+import { collectHistory } from './history.mjs';
 import { createClient, seoCredentials } from './seo.mjs';
 
 const SKILL_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -28,7 +30,7 @@ const UNSAFE_CLICK = /\b(submit|send|sign ?up|register|create (an )?account|log 
 
 const [command, dir, ...rest] = process.argv.slice(2);
 if (!command || !dir || !existsSync(path.join(dir || '', 'collected.json'))) {
-  console.error('Usage: node scripts/investigate.mjs <page|host|seo|ads|content|jobs> <teardown-dir> ... (see the header of this file)');
+  console.error('Usage: node scripts/investigate.mjs <page|host|seo|ads|content|jobs|history> <teardown-dir> ... (see the header of this file)');
   process.exit(1);
 }
 
@@ -369,9 +371,23 @@ async function investigateJobs() {
   await save({ tool: 'jobs', url, status: jobs.status }, digest);
 }
 
-const run = { page: investigatePage, host: investigateHost, seo: investigateSeo, ads: investigateAds, content: investigateContent, jobs: investigateJobs }[command];
+// ---------- history: Wayback Machine copies of another page ----------
+
+async function investigateHistory() {
+  const url = positional[0];
+  if (!url) throw new Error('history needs a page URL');
+  const browser = await chromium.launch();
+  const kind = `${id}-${helpers.slugify(url)}`;
+  const h = await collectHistory({ browser, pages: [{ kind, url }], matchVendor: helpers.matchVendor, years: Number(flags.years) || 2, outDir: dir, slugify: helpers.slugify, log: (m) => console.error('[history]', m) });
+  await browser.close();
+  const p = h.pages[0];
+  const lines = p.error ? [p.error] : [...p.rows, p.live].filter(Boolean).map((r) => `- ${r.date}${r.live ? ' (live)' : ''}: ${r.error ? `failed (${r.error})` : `${r.thin ? '(thin) ' : ''}${r.h1?.[0] || r.title} | prices: ${r.prices?.slice(0, 6).join(', ') || 'none'} | ${r.archiveUrl}`}`);
+  await save({ tool: 'history', url, result: p }, `Wayback Machine copies of ${url}. Cite a snapshot with type "history" and its URL, or this investigation by ID.\n${lines.join('\n')}\nChanges: ${p.changes?.length ? p.changes.map((c) => `${c.from} → ${c.to}: ${Object.keys(c).filter((k) => !['from', 'to', 'toUrl'].includes(k)).join(', ')}`).join('; ') : 'none'}`);
+}
+
+const run = { page: investigatePage, host: investigateHost, seo: investigateSeo, ads: investigateAds, content: investigateContent, jobs: investigateJobs, history: investigateHistory }[command];
 if (!run) {
-  console.error(`Unknown command "${command}". Use page, host, seo, ads, content or jobs.`);
+  console.error(`Unknown command "${command}". Use page, host, seo, ads, content, jobs or history.`);
   process.exit(1);
 }
 try {

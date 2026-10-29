@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 // Collects public evidence about a company's marketing from its website:
 // key page content, a network grab (pixels, tags, IDs), Wappalyzer detections, the sitemap,
-// a content sample, public ad libraries and open job posts, written to one folder for the agent to read.
+// a content sample, public ad libraries, open job posts and Wayback Machine history, written to one
+// folder for the agent to read.
 //
 // Usage: node scripts/collect.mjs <domain-or-url> [--out <dir>] [--pages <url,url>]
 //        [--max-pages 7] [--wait 6000] [--no-consent] [--no-wappalyzer]
 //        [--no-seo] [--seo-location 2840] [--seo-language en] [--no-ads] [--ads-country US]
-//        [--no-content] [--content-posts 20] [--no-jobs]
+//        [--no-content] [--content-posts 20] [--no-jobs] [--no-history] [--history-years 2]
 //
 // Search data is added when DATAFORSEO_LOGIN and DATAFORSEO_PASSWORD are set in the
 // environment, the skill's .env file or ~/.config/dataforseo/.env.
@@ -22,6 +23,7 @@ import { gunzipSync } from 'node:zlib';
 import { collectSeo, collectSerpCompetitors, createClient, enrichSeo, seoCredentials } from './seo.mjs';
 import { brandCandidates, collectAds } from './ads.mjs';
 import { collectJobs } from './jobs.mjs';
+import { collectHistory } from './history.mjs';
 import { cadence, collectContent, savePosts } from './content.mjs';
 import { acceptConsent, extractEvents, extractPage, hostMatches, isLocale, loadEnv, registrableDomain, siteHelpers, sleep } from './lib.mjs';
 
@@ -44,7 +46,7 @@ const MARKETING_CATEGORIES = new Set([
 // ---------- arguments ----------
 
 const args = process.argv.slice(2);
-const opts = { maxPages: 7, wait: 6000, consent: true, wappalyzer: true, content: true, contentPosts: 20, jobs: true, ads: true, adsCountry: 'US', seo: true, seoLocation: 2840, seoLanguage: 'en', pages: [], out: null };
+const opts = { maxPages: 7, wait: 6000, consent: true, wappalyzer: true, content: true, contentPosts: 20, jobs: true, history: true, historyYears: 2, ads: true, adsCountry: 'US', seo: true, seoLocation: 2840, seoLanguage: 'en', pages: [], out: null };
 let target = null;
 for (let i = 0; i < args.length; i++) {
   const a = args[i];
@@ -58,6 +60,8 @@ for (let i = 0; i < args.length; i++) {
   else if (a === '--no-ads') opts.ads = false;
   else if (a === '--no-content') opts.content = false;
   else if (a === '--no-jobs') opts.jobs = false;
+  else if (a === '--no-history') opts.history = false;
+  else if (a === '--history-years') opts.historyYears = Number(args[++i]);
   else if (a === '--content-posts') opts.contentPosts = Number(args[++i]);
   else if (a === '--ads-country') opts.adsCountry = args[++i].toUpperCase();
   else if (a === '--seo-location') opts.seoLocation = Number(args[++i]);
@@ -65,7 +69,7 @@ for (let i = 0; i < args.length; i++) {
   else if (!a.startsWith('--')) target = a;
 }
 if (!target) {
-  console.error('Usage: node scripts/collect.mjs <domain-or-url> [--out dir] [--pages url,url] [--max-pages 7] [--wait 6000] [--no-consent] [--no-wappalyzer] [--no-seo] [--seo-location 2840] [--seo-language en] [--no-ads] [--ads-country US] [--no-content] [--content-posts 20] [--no-jobs]');
+  console.error('Usage: node scripts/collect.mjs <domain-or-url> [--out dir] [--pages url,url] [--max-pages 7] [--wait 6000] [--no-consent] [--no-wappalyzer] [--no-seo] [--seo-location 2840] [--seo-language en] [--no-ads] [--ads-country US] [--no-content] [--content-posts 20] [--no-jobs] [--no-history] [--history-years 2]');
   process.exit(1);
 }
 
@@ -237,6 +241,12 @@ const sitemap = summariseSitemap(sitemapRaw);
 const socialHosts = /(^|\.)(x\.com|twitter\.com|linkedin\.com|youtube\.com|facebook\.com|instagram\.com|tiktok\.com|github\.com|discord\.(gg|com)|threads\.net|bsky\.app|reddit\.com|medium\.com|pinterest\.com)$/;
 const socials = [...new Set((home.links || []).filter((l) => { try { const u = new URL(l.href); return socialHosts.test(u.hostname) && u.pathname.length > 1 && !/\/(share|intent|sharer)/.test(u.pathname); } catch { return false; } }).map((l) => l.href.replace(/\?.*$/, '')))];
 
+// Hiring: open roles from the company's public job board. Runs before the content sample, which
+// can trip a site's rate limit.
+const jobs = opts.jobs
+  ? await collectJobs({ context, origin: new URL(home.url || startUrl.href).origin, siteRoot, domain: siteHost, brands: brandCandidates({ domain: siteHost, homeTitle: home.title }), links: home.links || [], sitemapUrls: sitemapRaw.urls, outDir, log, slugify }).catch((e) => ({ status: 'error', error: e.message.split('\n')[0] }))
+  : { skipped: 'disabled with --no-jobs' };
+
 // Content sample: newest posts plus top search-traffic posts (search data arrives in parallel).
 const seoForContent = await seoJob;
 const content = opts.content
@@ -247,14 +257,15 @@ if (!content.skipped) {
   content.cadence = cadence(content);
 }
 
-// Hiring: open roles from the company's public job board.
-const jobs = opts.jobs
-  ? await collectJobs({ context, origin: new URL(home.url || startUrl.href).origin, siteRoot, domain: siteHost, brands: brandCandidates({ domain: siteHost, homeTitle: home.title }), links: home.links || [], sitemapUrls: sitemapRaw.urls, outDir, log, slugify }).catch((e) => ({ status: 'error', error: e.message.split('\n')[0] }))
-  : { skipped: 'disabled with --no-jobs' };
-
 const ads = opts.ads
   ? await collectAds({ browser, userAgent, domain: siteHost, homeTitle: home.title, socials, country: opts.adsCountry, outDir, log })
   : { skipped: 'disabled with --no-ads' };
+
+// Changes over time: Wayback Machine snapshots of the homepage and pricing page.
+const historyTargets = pages.filter((p) => !p.error && (p.kind === 'home' || p.kind === 'pricing')).map((p) => ({ kind: p.kind, url: p.url }));
+const history = opts.history
+  ? await collectHistory({ browser, pages: historyTargets, matchVendor, years: opts.historyYears, outDir, log, slugify }).catch((e) => ({ error: e.message.split('\n')[0], pages: [] }))
+  : { skipped: 'disabled with --no-history' };
 await browser.close();
 
 // ---------- Wappalyzer ----------
@@ -542,6 +553,7 @@ const collected = {
   ads,
   content,
   jobs,
+  history,
   captureRegion,
   wordpress: { plugins: [...wordpress.plugins].sort(), themes: [...wordpress.themes].sort() },
   wappalyzer: Array.isArray(wappalyzer) ? wappalyzer.map((w) => ({ url: w.url, error: w.error || null, count: (w.technologies || []).length })) : wappalyzer,
@@ -612,6 +624,7 @@ function buildSummary(c) {
   L.push(...contentSummary(c.content));
   L.push(...adsSummary(c.ads));
   L.push(...jobsSummary(c.jobs));
+  L.push(...historySummary(c.history));
   if (c.seo.skipped) {
     L.push('## Search data', '', `Not collected (${c.seo.skipped}).`, '');
   } else {
@@ -665,6 +678,35 @@ function adsSummary(a) {
     }
     for (const ad of l.ads.slice(0, 12)) L.push(`- ${ad.text}${ad.headline ? ` | Headline: ${ad.headline}` : ''}`);
   } else L.push('', `### LinkedIn: ${l.status}${l.error ? ` (${l.error})` : ''}. ${l.note || ''}`);
+  L.push('');
+  return L;
+}
+
+function historySummary(h) {
+  if (!h || h.skipped) return ['## Changes over time', '', `Not collected (${h?.skipped || 'unknown'}).`, ''];
+  const L = ['## Changes over time (Wayback Machine)', '', `Archived copies about one per quarter over ${h.years} years, read as HTML without running scripts. "Thin" copies have little text (pages built by JavaScript); they're shown but not compared. Tools are only those written into the page HTML; tags loaded by a tag manager or script bundle don't show, so a tool leaving the HTML doesn't prove it was removed. Full text of each copy: history/.`];
+  if (h.error) L.push('', `Failed: ${h.error}`);
+  const cell = (v) => String(v || '').replace(/\|/g, '/');
+  for (const p of h.pages) {
+    L.push('', `### ${p.kind}: ${p.url}`);
+    if (p.error) { L.push(p.error); continue; }
+    L.push(`${p.snapshotsAvailable} monthly snapshots available in the period.`, '', '| Date | Title | H1 | Prices | Tools in HTML | Words | Snapshot |', '|---|---|---|---|---|---|---|');
+    for (const r of [...p.rows, p.live].filter(Boolean)) {
+      if (r.error) { L.push(`| ${r.date || 'live'} | failed: ${cell(r.error)} | | | | | |`); continue; }
+      L.push(`| ${r.date}${r.live ? ' (live)' : ''} | ${cell(r.title)} | ${cell(r.h1[0])} | ${cell(r.prices.slice(0, 8).join(', '))} | ${cell(r.tools.join(', '))} | ${r.words}${r.thin ? ' (thin)' : ''}${r.sameAsPrevious ? ' (same as previous)' : ''} | ${r.live ? 'live page' : r.archiveUrl} |`);
+    }
+    if (p.changes.length) {
+      L.push('', 'Changes between readable copies:');
+      for (const c of p.changes) {
+        const bits = [];
+        if (c.title) bits.push(`title "${c.title.before}" → "${c.title.after}"`);
+        if (c.h1) bits.push(`H1 ${c.h1.before ? `"${c.h1.before}"` : '(none)'} → ${c.h1.after ? `"${c.h1.after}"` : '(none)'}`);
+        if (c.description) bits.push(`description changed`);
+        for (const k of ['ctas', 'prices', 'tools']) if (c[k]) bits.push([c[k].added.length && `${k === 'ctas' ? 'CTAs' : k} added ${c[k].added.join(', ')}`, c[k].removed.length && `${k === 'ctas' ? 'CTAs' : k} ${k === 'tools' ? 'no longer in HTML' : 'removed'} ${c[k].removed.join(', ')}`].filter(Boolean).join('; '));
+        L.push(`- ${c.from} → ${c.to}: ${bits.join('; ')}`);
+      }
+    } else L.push('', 'No changes between readable copies.');
+  }
   L.push('');
   return L;
 }

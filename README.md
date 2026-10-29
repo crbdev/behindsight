@@ -16,6 +16,7 @@ See the full [Calendly example report](examples/calendly.com/report.html). Downl
 | Sitemap | Content sections and their size, comparison, integration and template pages, locales, and update dates by month |
 | Content sample | The newest blog posts (from the feed, the blog index or the sitemap) and the posts that earn the most search traffic: publish dates, authors, length, headings, CTAs, lead forms and links to the product. The agent reads them and maps topics, formats, funnel stages and how posts turn readers into customers |
 | Job boards | Open roles from the company's public job board (Greenhouse, Lever, Ashby, Workable, SmartRecruiters or Recruitee): counts by department and location, how recently roles were posted, and the marketing, sales and customer roles in full, including the tools their posts name |
+| [Wayback Machine](https://web.archive.org) | About one archived copy per quarter of the homepage and pricing page over two years: how the headline, CTAs, prices and the tags in the page changed, with dates |
 | Ad libraries | The company's own live ads from [Google's Ads Transparency Center](https://adstransparency.google.com), [Meta's Ad Library](https://www.facebook.com/ads/library) and [LinkedIn's Ad Library](https://www.linkedin.com/ad-library): counts, formats, dates, ad copy and sample images |
 | [DataForSEO](https://dataforseo.com) (optional) | Estimated organic traffic and keywords, top keywords and pages, traffic by site section, and the sites competing for their non-branded keywords |
 
@@ -92,6 +93,7 @@ Behindsight reads what any visitor's browser receives: public pages, public ad l
 ## Limits
 
 - It reads public sources only: the website, the public ad libraries and, with credentials, DataForSEO. Social accounts and review sites are on the roadmap.
+- History reads archived copies as plain HTML. Pages built by JavaScript can archive with little text, and tags loaded by a tag manager don't show in them.
 - Job boards: only the six supported systems are read. Companies on Workday or a self-built careers page get no hiring data, and open roles show where a team is growing, not how big it is.
 - Ad libraries show which ads run, not what they cost. LinkedIn shows impression ranges and run dates for some ads only. The ad library sites can change without notice, which may break that step.
 - An ad account counts as the company's only when its name matches the brand and its ads link to the company's domain (or the company's site links to it). Short brand names collide often; when no account can be tied to the company, the report says so instead of guessing.

@@ -7,6 +7,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { registrableDomain, sleep } from './lib.mjs';
+import { nameMatch } from './ads.mjs';
 
 const BOARDS = [
   { ats: 'greenhouse', patterns: [/greenhouse\.io\/embed\/job_board(?:\/js)?\?(?:[^"'\s]*&)?for=([\w-]+)/i, /boards-api\.greenhouse\.io\/v1\/boards\/([\w-]+)/i, /(?:boards|job-boards)(?:\.eu)?\.greenhouse\.io\/([\w-]+)/i] },
@@ -137,9 +138,15 @@ export async function collectJobs({ context, origin, siteRoot, domain, brands, l
     const seen = [];
     page.on('request', (r) => seen.push(r.url()));
     try {
-      await page.goto(careers, { waitUntil: 'domcontentloaded', timeout: 30000 });
-      await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {});
-      await sleep(2500);
+      for (let attempt = 0; attempt < 2; attempt++) {
+        await page.goto(careers, { waitUntil: 'domcontentloaded', timeout: 30000 });
+        await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {});
+        await sleep(2500);
+        // A rate-limit page gets one retry after a pause.
+        if (!/error 10\d\d|too many requests|access denied|just a moment|attention required|rate limit/i.test(await page.title())) break;
+        log('careers page rate-limited, waiting 30s');
+        await sleep(30000);
+      }
       careers = page.url();
       seen.push(...await page.evaluate(() => [...document.querySelectorAll('a[href], iframe[src], script[src]')].map((e) => e.href || e.src)), await page.content());
     } catch (e) { log(`careers page failed: ${e.message.split('\n')[0]}`); }
@@ -156,7 +163,9 @@ export async function collectJobs({ context, origin, siteRoot, domain, brands, l
       for (const ats of ['greenhouse', 'ashby', 'lever']) {
         try {
           const r = await READERS[ats](slug);
-          if (r.postings.length && r.postings.some((p) => p.text.toLowerCase().includes(siteRoot))) { boards = [{ ats, slug }]; basis = `found by trying "${slug}" on ${ats}; its posts mention ${siteRoot}`; break; }
+          if (!r.postings.length) continue;
+          if (r.postings.some((p) => p.text.toLowerCase().includes(siteRoot))) { boards = [{ ats, slug }]; basis = `found by trying "${slug}" on ${ats}; its posts mention ${siteRoot}`; break; }
+          if (r.company && nameMatch(r.company, brands) === 'exact') { boards = [{ ats, slug }]; basis = `found by trying "${slug}" on ${ats}; the board's company name is ${r.company}`; break; }
         } catch {}
       }
       if (boards.length) break;
