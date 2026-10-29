@@ -26,7 +26,7 @@ import { createClient, seoCredentials } from './seo.mjs';
 const SKILL_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36';
 // Clicking any of these could submit data, buy something or create an account, which the skill never does.
-const UNSAFE_CLICK = /\b(submit|send|sign ?up|register|create (an )?account|log ?in|sign ?in|buy|purchase|checkout|check out|add to (cart|bag)|place order|pay|subscribe|start (free )?trial|get started|book (a )?(demo|meeting|call)|request|download|delete|unsubscribe)\b/i;
+const UNSAFE_CLICK = /\b(submit|send|sign ?up|register|create (an )?account|log ?in|sign ?in|buy|purchase|checkout|check out|add to (cart|bag)|place order|pay now|pay \$|make (a )?payment|complete (your )?(order|payment)|subscribe|start (free )?trial|get started|book (a )?(demo|meeting|call)|request|download|delete|unsubscribe)\b/i;
 
 const [command, dir, ...rest] = process.argv.slice(2);
 if (!command || !dir || !existsSync(path.join(dir || '', 'collected.json'))) {

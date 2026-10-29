@@ -53,7 +53,7 @@ Environment variables work too, and so does `~/.config/dataforseo/.env`, the fil
 
 To use it as a Claude Code skill, copy or symlink `skills/behindsight` into `~/.claude/skills/` (or a project's `.claude/skills/`). Then ask: "Do a marketing teardown of example.com."
 
-A full run with Claude Opus takes about 25 minutes of agent work and uses roughly 12 million input tokens (almost all cached) and 70,000 output tokens: about $10 at API prices on a linear.app test, plus about $0.09 of DataForSEO if enabled. Sites with more pages to investigate cost more.
+A full run with Claude Opus takes 25 to 40 minutes of agent work and uses roughly 6 to 12 million input tokens (almost all cached) and 70,000 to 100,000 output tokens: about $10 to $15 at API prices in tests on linear.app and zapier.com, plus about $0.10 of DataForSEO if enabled. Bigger sites with more to investigate cost more.
 
 ## Run the scripts directly
 

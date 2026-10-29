@@ -21,9 +21,11 @@ sh scripts/setup.sh
 
 Setup needs Node.js 20 or later and stops with a message if it's missing or older. Show the user that message and the install options it lists. Offer to run the install command for them, and run it only if they agree; never install Node or change their Node version without asking.
 
-Search data is optional. It needs a [DataForSEO](https://dataforseo.com) account. If the user wants it, have them copy `.env.example` to `.env` in the skill folder and fill in `DATAFORSEO_LOGIN` and `DATAFORSEO_PASSWORD`, or set both as environment variables. Never ask the user to paste credentials into the chat. Each run makes four DataForSEO Labs calls and is billed to their account. The collector prints the cost DataForSEO reports.
+Search data is optional. It needs a [DataForSEO](https://dataforseo.com) account. If the user wants it, have them copy `.env.example` to `.env` in the skill folder and fill in `DATAFORSEO_LOGIN` and `DATAFORSEO_PASSWORD`, or set both as environment variables. Never ask the user to paste credentials into the chat, and never print them: the collector reports whether search data was collected, so there's no need to check the variables yourself. Each run makes four DataForSEO Labs calls and is billed to their account. The collector prints the cost DataForSEO reports.
 
 ### 2. Collect
+
+Run every script from the user's current working directory, calling it by its path in this skill's folder (`node <skill-folder>/scripts/collect.mjs`). Don't `cd` into the skill folder: skills are often installed inside `.claude/`, where every write needs the user's approval, and the reports belong with the user's files anyway. The commands below write `scripts/…` for short.
 
 ```sh
 node scripts/collect.mjs <domain> [--out <dir>]

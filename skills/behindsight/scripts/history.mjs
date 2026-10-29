@@ -93,7 +93,7 @@ async function extract(page, html, matchVendor) {
     return { title: clean(document.title), description: clean(document.querySelector('meta[name="description"]')?.content), h1: heads('h1', 3), h2: heads('h2', 8), ctas, text: body };
   }).catch(() => ({ title: '', description: '', h1: [], h2: [], ctas: [], text: '' }));
   const flat = d.text.replace(/\s+/g, ' ');
-  const prices = [...new Set((flat.match(/(?:[$€£]\s?\d[\d,.]*|\b\d[\d,.]*\s?(?:USD|EUR|GBP))(?:\s?(?:\/|per)\s?(?:mo|month|yr|year|user|seat|member)\b(?:\s?(?:\/|per)\s?(?:mo|month|yr|year)\b)?)?/gi) || []).map((x) => x.replace(/[.,]+$/, '')))].slice(0, 20);
+  const prices = [...new Set((flat.match(/(?:[$€£]\s?\d[\d,.]*|\b\d[\d,.]*\s?(?:USD|EUR|GBP))(?:\s?(?:\/|per)\s?(?:mo|month|yr|year|user|seat|member)\b(?:\s?(?:\/|per)\s?(?:mo|month|yr|year)\b)?)?/gi) || []).map(normPrice))].slice(0, 20);
   const tools = new Set();
   const ids = new Set(html.match(/\bGTM-[A-Z0-9]{4,9}\b/g) || []);
   for (const m of html.matchAll(/(?:https?:)?\/\/([a-z0-9-]+(?:\.[a-z0-9-]+)+)(\/[^"'\s<>)\\]*)?/gi)) {
@@ -101,6 +101,9 @@ async function extract(page, html, matchVendor) {
   }
   return { ...d, prices, tools: [...tools].sort(), tagIds: [...ids], words: flat.split(' ').filter(Boolean).length };
 }
+
+// One spelling per price, so "$ 69 /mo" and "$69/month" don't count as a change.
+const normPrice = (x) => x.replace(/[.,]+$/, '').replace(/\s+/g, ' ').replace(/([$€£]) /, '$1').replace(/\s?(\/|per)\s?/gi, '/').replace(/\/mo\b/i, '/month').replace(/\/yr\b/i, '/year').toLowerCase();
 
 const diff = (a = [], b = []) => ({ added: b.filter((x) => !a.includes(x)), removed: a.filter((x) => !b.includes(x)) });
 
