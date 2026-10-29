@@ -1,6 +1,6 @@
 # Behindsight
 
-See what's behind any company's website. Behindsight is an agent skill that reverse-engineers a company's marketing from its public website. Give it a domain. It returns an HTML report covering the business model, positioning, acquisition channels, conversion funnel, retention tools, content strategy and the full marketing stack. Every claim is labeled **seen**, **inferred** or **unknown** and links to its evidence.
+See what's behind any company's website. Behindsight is an agent skill that reverse-engineers a company's marketing from its public website. Give it a domain. It returns an HTML report covering the business model, positioning, acquisition channels, conversion funnel, retention tools, content strategy, hiring, how the pitch and pricing changed over time, and the full marketing stack. Every claim is labeled **seen**, **inferred** or **unknown** and links to its evidence.
 
 ![The top of a Behindsight report on calendly.com: summary, evidence labels and highlights](docs/report-screenshot.png)
 
@@ -75,8 +75,9 @@ Every report goes through two checks before it renders: a script matches each ci
 |---|---|---|
 | 1 | First draft | 25 of 47 |
 | 2 | Detection fixes (tools served from the company's own domain, a Floodlight false positive) and writing rules learned from round 1 | 11 of 49 |
+| 3 | A fresh run by an agent working alone from the published skill, with hiring, history and stricter ad matching added. This is the current example | 32 of 70 |
 
-All flagged items were corrected before the example was published. The round-1 lessons now live in the skill's writing rules, so new reports start from the improved baseline.
+All flagged items were corrected before the example was published. Round 3 covers more ground than the first two and had no human edits, which is why the reviewer matters: most of its catches were installed ad tags described as active spend and search shares quoted without their basis. The lessons from each round go into the skill's writing rules.
 
 ## The example
 

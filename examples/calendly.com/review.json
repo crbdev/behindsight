@@ -1,262 +1,388 @@
 {
-  "reviewedAt": "2026-10-28T10:30:00Z",
-  "summary": "Most of the report holds up: prices, page quotes, per-page tag counts and DataForSEO figures match the evidence, and inferred claims carry fair confidence. The errors cluster in the ad and intent sections: LinkedIn's 9 library ads are called 'live' though the data has no active status and the screenshot shows a past-event ad and a jobs ad, the Meta page is called verified when collected.json says verified: false, and Clearbit visitor identification is counted on 7 pages when the network log shows 6. A few seen claims also carry interpretation (primary conversion, the booking-link explanation for Google, sales use of Clearbit).",
+  "reviewedAt": "2026-10-29T08:05:00.000Z",
+  "summary": "Most of the report holds up: prices, the July-to-October 2026 repositioning, the search estimates, the stack IDs and the LinkedIn ad creative all check out against the captured evidence. The errors cluster in three patterns: claims that assert more than the capture can show (a Meta pixel that is nowhere in the network log, 'every open role is building the AI product' when only 3 of 8 titles name AI, a signup page that 'does not sell the free plan' when its own heading is 'Create a free account'), interpretation carried under a 'seen' label, and two internal contradictions where a claim disagrees with its own section summary or its own evidence. 63 claims checked: 38 supported, 14 overstated, 6 mislabeled, 4 contradicted, 1 unsupported, plus 7 section summaries with problems.",
   "items": [
     {
       "where": "summary",
       "verdict": "overstated",
-      "reason": "Mostly matches the claims (per-seat pricing, free plan, Enterprise from $15k/yr on pricing.md; Marketo/Clearbit/G2/LinkedIn in the stack). Two phrases state more than the evidence: 'LinkedIn is the only ad library with live Calendly ads' (collected.json ads.linkedin has status 'found' and adsMatchingSearch '9' with no active flag or run dates, and ads/linkedin.jpg shows one of the ads promoting a 'June 18, 2026' event and another a jobs ad), and 'the site is under active Statsig experimentation', which is an inference from the SDK loading, written as fact.",
-      "fix": "Calendly sells scheduling software with an AI notetaker, an email scheduling assistant (Callie) and payments, priced per seat with a free plan and a sales-led Enterprise tier from $15k a year. Its marketing in this capture runs on brand-led organic search, free signup on nearly every page, and a B2B demand-generation stack (Marketo, Clearbit, G2 intent, LinkedIn). LinkedIn is the only ad library with Calendly ads listed (9, not all current), Meta and Google show none in the US, and Statsig's experiment SDK loads on every captured page."
+      "reason": "Two problems. (1) It lists built-in payments among what is 'sold as Standard Plus and Teams Plus at $18 and $24' — pages/pricing.md puts Payments ('Connect Stripe, PayPal') inside the plain Standard plan, and the toggle is labelled 'Add Notetaker & Callie', so payments is not part of the Plus packaging. (2) 'Acquisition runs overwhelmingly on brand and organic search' states a channel share the capture cannot measure: collected.json has DataForSEO organic estimates only, and no data on direct, paid, email or referral.",
+      "fix": "Say the AI relaunch added a Notetaker, an AI assistant called Callie and built-in payments, and that Notetaker and Callie are sold through Standard Plus and Teams Plus at $18 and $24. Soften the channel line to 'Organic search is the largest measured channel; DataForSEO estimates about 276,000 monthly US visits, 69% of top-keyword traffic branded.'"
     },
     {
       "where": "at_a_glance[0]",
       "verdict": "supported",
-      "reason": "home.md H2s and sections: Scheduling, Callie (AI assistant), Notetaker, Payments."
+      "reason": "pages/home.md and the footer on every captured page list the product set as Scheduling, AI assistant, Notetaker, Contacts and Payments."
     },
     {
       "where": "at_a_glance[1]",
       "verdict": "supported",
-      "reason": "pricing.md: 'Always free', '$10 /seat/mo' 'Save 17%', '$16 /seat/mo' 'Save 20%', Enterprise 'Starts at $15k /yr'; JSON-LD Standard USD 10 and Teams USD 16 with billingDuration P1Y."
+      "reason": "Fair inference: pages/customers.md and the five homepage testimonials are small businesses and solo founders, while pages/pricing.md carries an Enterprise tier at 'Starts at 50 seats'."
     },
     {
       "where": "at_a_glance[2]",
       "verdict": "supported",
-      "reason": "Matches business_model[2]: Get started on Free/Standard/Teams, 'Talk to sales' on Enterprise (pricing.md)."
+      "reason": "pages/pricing.md shows Free/'Always free', $10 and $16 '/seat/mo' with 'Billed yearly' selected, and Enterprise 'Starts at $15k /yr'; inv-10 raises the paid cards to $18 and $24."
     },
     {
       "where": "at_a_glance[3]",
       "verdict": "supported",
-      "reason": "'Get started for free' is the nav CTA on 6 of 7 pages and home.md shows 'Sign up with Google', 'Sign up with Microsoft' above the fold."
+      "reason": "Matches business_model[5]: 'Get started' on Free/Standard/Teams, 'Talk to sales' plus 'Starts at 50 seats' on Enterprise (pages/pricing.md)."
     },
     {
       "where": "at_a_glance[4]",
-      "verdict": "overstated",
-      "reason": "Google 'not found' and Meta 'no active ads' (US) match collected.json. 'Live' for LinkedIn isn't supported: ads.linkedin gives only status 'found' and adsMatchingSearch '9', with no active status or dates, and ads/linkedin.jpg shows an ad for an event dated 'June 18, 2026' (four months before capture) and a '%FIRSTNAME%, explore relevant opportunities' jobs ad among the 9.",
-      "fix": "Value: 'LinkedIn library lists 9 ads; none on Google or Meta (US)'. Label 'Ads in libraries' rather than 'Live ads'."
+      "verdict": "supported",
+      "reason": "'Get started for free' is the nav CTA on all captured pages and the hero offers 'Sign up with Google' / 'Sign up with Microsoft' (pages/home.md). The tile merges the nav label with the hero buttons, but both are on the page."
     },
     {
       "where": "at_a_glance[5]",
-      "verdict": "supported",
-      "reason": "collected.json seo.overview.organic.etv 276489; brandedShareOfTopKeywords 69. Labeled as an estimate."
+      "verdict": "contradicted",
+      "reason": "No Meta tag was detected anywhere. The stack table in summary.md lists no Meta/Facebook Pixel, and grepping network.json for facebook/fbevents/connect.facebook returns zero requests across all 1,257 (only googleadservices, doubleclick/725106552, googletagmanager and snap.licdn appear). The only pixel evidence is Google Ads AW-725106552 on 8 pages and the LinkedIn Insight Tag on 7. The 'Meta Pixel' text on pages/pricing.md is a customer-facing product feature, not Calendly's own tag.",
+      "fix": "\"LinkedIn ads found and Insight Tag installed; Google Ads tag installed, no ads found\" — and drop the Meta tag claim."
     },
     {
       "where": "at_a_glance[6]",
       "verdict": "supported",
-      "reason": "network.json: calendly.com/_astro/StatsigSectionExperiments...js and ss.calendly.com/prod-sync load on all 7 pages."
+      "reason": "All three figures match summary.md ('~276489 est. monthly visits', 'Branded keywords drive 69% of traffic among the top 100 keywords', 'homepage 73%') and the tile keeps the word 'est.'. Note both percentages are top-100 scoped and the branded share drops to 38% once the bare brand word is excluded."
     },
     {
       "where": "at_a_glance[7]",
       "verdict": "supported",
-      "reason": "First-party Segment proxy (evs.s.calendly.com, api.s.calendly.com), Marketo (munchkin on 6 pages), Statsig (7), Clearbit and G2 all in network.json; inferred label fits."
+      "reason": "All five are in the stack table or first-party tagging section of summary.md: Segment (CDP), Amplitude, Marketo 482-NMZ-854, Statsig, and the evs.s./api.s.calendly.com Segment proxies."
     },
     {
       "where": "sections.business_model[0]",
       "verdict": "supported",
-      "reason": "pricing.md shows '$10 /seat/mo' with 'Save 17%' and '$16 /seat/mo' with 'Save 20%' under a 'Billed monthly / Billed yearly' toggle; JSON-LD offers Standard Plan (USD) price 10 and Teams Plan (USD) 16, billingDuration P1Y. No monthly price in the capture."
+      "reason": "pages/pricing.md: 'Free'/'Always free', 'Standard' '$10' '/seat/mo', 'Teams' '$16' '/seat/mo', 'Enterprise' 'Starts at' '$15k' '/yr'. The pricing JSON-LD in collected.json confirms Standard price 10 and Teams price 16 with unitText 'seat/month'."
     },
     {
       "where": "sections.business_model[1]",
       "verdict": "supported",
-      "reason": "pricing.md: 'Starts at $15k /yr', 'Starts at 50 seats', and the Enterprise column's CTA is 'Talk to sales'."
+      "reason": "collected.json investigation inv-1 records the click on 'Billed monthly' with newText ['$12','$20']; the JSON-LD priceSpecification carries billingDuration 'P1Y' and the cards read 'Save 17%' and 'Save 20%'."
     },
     {
       "where": "sections.business_model[2]",
       "verdict": "supported",
-      "reason": "Public prices with 'Get started' on lower tiers and 'Talk to sales' on Enterprise (pricing.md), plus the Marketo sales form mktoForm_2588 on /contact. Matches the inference guide's hybrid row at high confidence."
+      "reason": "inv-10 in collected.json records clicking 'Add Notetaker & Callie' with newText ['Save up to 25%','$18','Save 25%','Included','$24','Everything in Standard Plus, and:']; with the toggle off pages/pricing.md shows the same cards carrying 'Add Notetaker & Callie' and 'Notetaker / Not included'."
     },
     {
       "where": "sections.business_model[3]",
       "verdict": "supported",
-      "reason": "pricing.md: Standard 'meeting invitees do not require a seat'; Teams 'meeting invitees do not require an account or seat'."
+      "reason": "Arithmetic checks ($10→$18 is +80%, $16→$24 is +50%) against inv-10, and the pricing H1 really is 'Add Notetaker and Callie to Standard or Teams plans'. 'Most likely source of near-term revenue growth' is properly hedged at inferred/medium."
     },
     {
       "where": "sections.business_model[4]",
       "verdict": "supported",
-      "reason": "Reasonable medium-confidence inference from invitees not needing a seat or account (pricing.md). Other evidence agrees: 2000\u20133000 Google ads from other advertisers point to calendly.com and user booking pages rank in search."
+      "reason": "history/pricing-2025-01-01.md shows $10, $16 and 'Starts at $15k' under a Billed monthly/yearly toggle; the live pages/pricing.md shows the same three figures 22 months later. 'Nearly two years' and high confidence are both fair."
     },
     {
       "where": "sections.business_model[5]",
       "verdict": "supported",
-      "reason": "home.md lists 'Upfront meeting payments', 'Meeting packages', 'Invoices', 'Payment links'; pricing.md 'Collect payments at booking via Stripe and PayPal'; signup.md 'Collect payments through Stripe or Paypal'."
+      "reason": "pages/pricing.md gives Free/Standard/Teams a 'Get started' button and Enterprise 'Talk to sales' with 'Starts at 50 seats'; pages/contact.md's dropdown tops out at 'Across departments or multiple teams (50+ users)'."
     },
     {
       "where": "sections.business_model[6]",
+      "verdict": "overstated",
+      "reason": "The JSON-LD figures are right (Standard 10 USD / 8 GBP / 10 EUR, Teams 16 USD / 13 GBP / 16 EUR), but 'the UK priced below the US' compares nominal numbers in different currencies. £8 and £13 convert to more than $10 and $16 at any plausible rate, so the evidence supports the opposite reading if anything. The comparison is also an interpretation sitting under a 'seen' label.",
+      "fix": "\"Pricing is localised to three currencies: Standard at 10 USD, 8 GBP and 10 EUR, Teams at 16 USD, 13 GBP and 16 EUR.\" Drop the cross-currency comparison, or state it explicitly as nominal list prices, not purchasing-power."
+    },
+    {
+      "where": "sections.business_model[7]",
       "verdict": "supported",
-      "reason": "No fee, revenue or paying-customer figure appears in any captured page."
+      "reason": "Correctly marked unknown. pages/pricing.md names 'Collect payments at booking via Stripe and PayPal' and 'Send invoices for project-based work' with no fee or revenue-share stated anywhere in the capture."
     },
     {
       "where": "sections.positioning[0]",
-      "verdict": "supported",
-      "reason": "home.md H1 'All the work around meetings, handled.'; the banner 'Introducing the new Calendly, built to handle all of the work around meetings.' is the first line of all 7 page files."
+      "verdict": "overstated",
+      "reason": "'Rather than scheduling' goes further than the page. The title tag the claim itself cites is 'Meeting Scheduling Software and AI Meeting Tools | Calendly' — scheduling first — and the first product section on pages/home.md is 'Book meetings with the world's #1 scheduling tool'. positioning[2] in this same section says the opposite ('still leads on scheduling leadership').",
+      "fix": "\"Calendly now claims the category of AI meeting management alongside scheduling, with the homepage promise that the whole job around a meeting is handled.\""
     },
     {
       "where": "sections.positioning[1]",
       "verdict": "supported",
-      "reason": "home.md title 'Meeting Scheduling Software and AI Meeting Tools' and H2 'Book meetings with the world's #1 scheduling tool'; LinkedIn ad 'Meet the new Calendly'. about.md is explicit: 'Scheduling is just the beginning. That's why we're taking on all of the work around meetings'. High confidence is fair."
+      "reason": "history/home-2026-07-01.md carries 'Free Online Appointment Scheduling Software | Calendly' and 'Calendly makes scheduling simple'; the 2026-10-01 copy carries the new title and H1. The same title ran unchanged from the 2025-01-01 snapshot, so 'at least eighteen months' is conservative."
     },
     {
       "where": "sections.positioning[2]",
-      "verdict": "supported",
-      "reason": "about.md: Tope's bio says 'over 20 million users'; the leadership intro says 'more than 50 million individuals and businesses' (also '50M+' and 'over 50 million people' on about.md and contact.md)."
+      "verdict": "mislabeled",
+      "reason": "The quoted heading 'Book meetings with the world's #1 scheduling tool' is on pages/home.md and the section order is right, but 'using the product's market position as the entry point to the AI story rather than abandoning it' reads intent into the layout. That is a conclusion, not a fact on the page.",
+      "fix": "Change status to inferred, confidence medium, or cut the clause after 'scheduling leadership'."
     },
     {
       "where": "sections.positioning[3]",
-      "verdict": "overstated",
-      "reason": "The five homepage stories (home.md) are Elizabeth Saunders (Founder, Real Life E), Marques Stewart (Achievement First, '75 hours saved monthly'), Akira Bradley (Co-Founder, Barking with the Bradley's), Lizzie Lewis (Founder, Kitty of Angels) and Pua Pakele (Founder, RBL Media), each with an outcome number. 'Small-business' doesn't fit all four: customers.md describes Kitty of Angels as a 'cat rescue' tagged Non-profit.",
-      "fix": "Four of the five homepage customer stories are founders of small businesses or nonprofits with outcome numbers, such as '$1,200 annual savings' and '100% attendance rate'. The fifth is Achievement First ('75 hours saved monthly')."
+      "verdict": "supported",
+      "reason": "history/home-2025-01-01.md contains both quoted lines ('Trusted by more than 100,000 of the world's leading organizations', 'including 86% of the Fortune 500 companies'); they persist to the 2026-07-01 copy and are gone from 2026-10-01. The 50M+/240+/1.3B+ block is on pages/contact.md as cited, and inv-11 carries '4 out of 5 Fortune 500'. Inferred/medium is right, since no archived enterprise page proves the claim 'moved' there."
     },
     {
       "where": "sections.positioning[4]",
       "verdict": "supported",
-      "reason": "seo.pages: /blog/calendly-vs-doodle ~668 and /blog/calendly-versus-youcanbookme ~413 are the only comparison posts among the top 100 pages; sitemap has 16 comparison-pattern URLs."
+      "reason": "All three verified: inv-11 uses 'Easy scheduling ahead' as an H2 on /solutions/enterprise; inv-12's newest comparison post is dated 'May 9, 2025'; pages/about.md says 'over 50 million people' in the intro and 'grown and evolved to over 20 million users' in Tope Awotona's founder/CEO bio."
     },
     {
       "where": "sections.positioning[5]",
       "verdict": "overstated",
-      "reason": "Counts match seo.competitors (squareup 16, zapier 15, emailtooltester 14, setmore 14, appointy 13, picktime 13, doodle 3), but jotform.com also ranks for 13 and is left out of a list framed as the top overlaps.",
-      "fix": "In search, Calendly's top 20 non-branded keywords overlap most with Square (16 of 20), Zapier (15), emailtooltester.com and Setmore (14 each), and Appointy, Picktime and Jotform (13 each). Doodle overlaps on only 3."
+      "reason": "The seo evidence detail says 'only youcanbook.me and zoom.com appear in both lists', but inv-12 also lists 'Calendly vs. Acuity' and acuityscheduling.com is in summary.md's search-competitor list (ranks for 6 of the top 20 non-branded keywords, avg pos 13.5). The evidence detail also names only 6 of the 12 posts on the hub, omitting the ones that overlap. The headline difference still holds for squareup, zapier, setmore and appointy.",
+      "fix": "Correct the detail to 'youcanbook.me, zoom.com and acuityscheduling.com appear in both lists', and reword the claim to 'Calendly's four biggest organic rivals — Square, Zapier, Setmore and Appointy — are not the tools its comparison hub positions against.'"
+    },
+    {
+      "where": "sections.positioning[6]",
+      "verdict": "overstated",
+      "reason": "Two scope problems. pages/customers.md shows 'Viewing: 12 Popular' with a 'Load more' button and Business size filters up to 'Large company', so the 12 stories are a curated slice, not 'the public customer proof'. And the evidence detail 'most headlines name Notetaker' is wrong: 4 of the 12 headlines name Notetaker (Trusted Tech, Nana's Foundation, Allenatore Coaching, Kitty of Angels) — which is what retention[3] in this same report says. The list also includes Arbor Day Foundation ('300+ global projects') and Thoughtly, which are not solo operators.",
+      "fix": "\"The 12 featured customer stories are mostly solo operators and very small businesses, which sits oddly against an enterprise tier that starts at 50 seats.\" Correct the detail to 'four of the 12 headlines name Notetaker'."
     },
     {
       "where": "sections.acquisition[0]",
       "verdict": "overstated",
-      "reason": "collected.json ads.linkedin: status 'found', adsMatchingSearch '9', adsRead 5, with no active flag or run dates. ads/linkedin.jpg shows that the 9 include an ad for 'Jayde I. Powell | How I Work Live Ep. 002' on 'June 18, 2026' (past event at capture on 2026-10-28) and a '%FIRSTNAME%, explore relevant opportunities with Calendly' jobs ad. So 'live' isn't established, and not all 9 are marketing ads. The theme list also describes all 9 from 5 read.",
-      "fix": "LinkedIn is the only ad library with Calendly ads listed: 9 match the advertiser in the US, including at least one for a past event (June 18, 2026) and one jobs ad, so not all are current. The 5 read mix customer stories, creator stories, comparison content and the 'new Calendly' launch."
+      "reason": "'Dominant acquisition channel by a wide margin' compares organic against channels the capture never measured — the only evidence is one DataForSEO organic estimate, and the inference guide says these are modeled estimates to compare within a report, not the company's real traffic. The numbers themselves (276,489 visits, 34,184 keywords, 810 at #1, ~$2,433,364/mo) all match summary.md. It is also a conclusion carried under 'seen'.",
+      "fix": "Status inferred, confidence medium: \"Organic search is the largest acquisition channel the capture can measure — DataForSEO estimates about 276,000 monthly US visits from 34,184 ranking keywords.\""
     },
     {
       "where": "sections.acquisition[1]",
-      "verdict": "mislabeled",
-      "reason": "collected.json ads.google: status 'not found', note 'No advertiser account matching the brand has ads pointing to the domain in this region', domainAdsTotal '2000\u20133000', otherAdvertisersInSample 71. The data covers ads pointing to calendly.com, not all Calendly ads, and the reason ('such as booking links in their own ads') is an interpretation inside a seen claim.",
-      "fix": "Seen: 'Google's Ads Transparency Center shows no advertiser account matching Calendly with ads pointing to calendly.com in the US. Between 2,000 and 3,000 ads point to the domain; the 71 advertisers in the sample are other businesses.' Move the booking-link explanation to an inferred claim (medium)."
+      "verdict": "supported",
+      "reason": "summary.md: 'Branded keywords drive 69% of traffic among the top 100 keywords (38% when the bare brand name ... is left out)', 'homepage 73%', and 'calendly (brand) | 1 | 368000 | 111872'. The claim keeps the brand-strength reading at inferred/high, which the two agreeing signals support."
     },
     {
       "where": "sections.acquisition[2]",
-      "verdict": "contradicted",
-      "reason": "collected.json ads.meta.page: name 'Calendly', alias 'calendly', \"verified\": false. activeAds '0' and the 'no active ads in US' note match, but the page is not marked verified.",
-      "fix": "Calendly's Facebook page (calendly) has no active ads in the US Meta Ad Library."
+      "verdict": "overstated",
+      "reason": "The three cited keywords check out, but the top-keyword table contradicts 'it holds at position 1' as a general rule for non-branded search: the single largest non-branded term, 'itc timing' (volume 368,000, ~12,438 visits), ranks position 6 on a customer booking page, 'appointments' (165,000) ranks 6, 'google meeting' (1,830,000) ranks 39 and 'scheduler' ranks 3. Picking three position-1 rows is a conclusion drawn from a sample, so 'seen' is the wrong label.",
+      "fix": "Status inferred, confidence medium: \"Most of Calendly's non-branded search traffic comes from short generic head terms it holds at position 1 — though its single biggest non-branded keyword, 'itc timing', ranks 6th on a customer's booking page.\""
     },
     {
       "where": "sections.acquisition[3]",
       "verdict": "supported",
-      "reason": "network.json: googleads.g.doubleclick.net/pagead/viewthroughconversion/725106552, www.google.com/rmkt/collect/725106552 and /pagead/1p-user-list/725106552 fire on all 7 pages. The claim frames the explanation as possibilities at low confidence, which fits a US-only library check against a outside the US capture."
+      "reason": "287 of 1,073 sitemap URLs is 26.7%, and summary.md's traffic-by-section gives blog 3% against homepage 73%. Inferred/medium is appropriate for the 'not carrying acquisition' conclusion."
     },
     {
       "where": "sections.acquisition[4]",
-      "verdict": "overstated",
-      "reason": "No facebook, tiktok or reddit hosts in network.json, and captureRegion is outside the US with www.a regional Google domain, which the claim notes. But 'LinkedIn ads are live' repeats the unsupported 'live' (see acquisition[0]), and Google Ads conversion and remarketing calls on all 7 pages are a second paid signal that cuts against 'light'.",
-      "fix": "Paid social looks light and B2B-focused in this capture: LinkedIn's library lists Calendly ads and its Insight Tag loads on 6 of 7 pages, while no Meta, TikTok or Reddit pixels loaded. The Google Ads remarketing tag also loads on all 7 pages. The capture ran from outside the US (outside the US time zone, a regional Google domain requests), and tags can differ by region. (inferred, low)"
+      "verdict": "mislabeled",
+      "reason": "The data is right (/john-haller/itc at position 6 for 'itc timing', ~12,438 visits; /jcmbarbershop/30min at ~702 visits from 112 keywords), but 'traffic the company never planned for' attributes intent that no evidence in the folder speaks to.",
+      "fix": "Status inferred, confidence medium, or cut to 'Customers' own Calendly booking pages rank in Google and pull in a measurable share of the domain's search traffic.'"
     },
     {
       "where": "sections.acquisition[5]",
-      "verdict": "contradicted",
-      "reason": "network.json: Clearbit's visitor-identification scripts (tag.clearbitscripts.com/v1/pk_6552.../tags.js, x.clearbitjs.com tracking.min.js, app.clearbit.com/v1/p) load on 6 pages, not the homepage. The homepage loads only marketo.clearbit.com/assets/v1/marketo/forms.js, Clearbit's Marketo form script, which is why the stack table says 7. G2 (tracking.g2crowd.com/attribution_tracking/conversions/5374.js) is on 6, correct. 'Sales can see which companies visit' is an inference inside a seen claim; the inference guide puts 'drives an outbound program' at medium.",
-      "fix": "Seen: 'Clearbit's visitor-identification scripts load on 6 of the 7 captured pages (all but the homepage, which loads only Clearbit's Marketo form script), and G2 buyer-intent tracking on 6.' Separate inferred claim (medium): 'Calendly can identify which companies visit the site; whether sales acts on it isn't visible.'"
+      "verdict": "supported",
+      "reason": "ads/linkedin.jpg shows '11 ads match your search criteria' and carries all the quoted copy: 'Grow with the #1 Scheduling Solution' / 'Connect any team, workflow, or tool', 'Break-free from scheduling bottlenecks', and two recruitment cards reading '%FIRSTNAME%, explore jobs at Calendly that match your skills'. summary.md confirms 11 ads, 9 shown in US, matched because it is the LinkedIn page linked from calendly.com. One nit: the 'How I Work' item is a live online event ('Thurs. June 18 | 12 PM ET', 'Event by Calendly', 'Online'), so 'video series' is slightly off."
     },
     {
       "where": "sections.acquisition[6]",
-      "verdict": "supported",
-      "reason": "seo.overview.organic: etv 276489, keywords 34184, pos1 810. Written as a DataForSEO estimate."
+      "verdict": "overstated",
+      "reason": "'Tags on every captured page ... on either platform' implies a Meta tag that does not exist in the capture: no facebook/fbevents request appears in network.json and no Meta pixel is in summary.md's stack table. Only the Google Ads tag is on 8/8 pages. The library results themselves are right (Meta: 'no active ads in any country'; Google: inv-7 searched 'Calendly LLC', status 'not found'), but the inference guide says a tag with no ads found means 'retargeting only, paused, or under another account name — mark unknown rather than not advertising', and 'so there is no evidence of live spend' is a conclusion under a 'seen' label.",
+      "fix": "Status inferred, confidence medium: \"Neither Meta's nor Google's ad library shows ads from a Calendly-named advertiser, so no live spend on either platform is visible — despite a Google Ads tag (AW-725106552) on all 8 captured pages. No Meta pixel was detected at all.\""
     },
     {
       "where": "sections.acquisition[7]",
       "verdict": "supported",
-      "reason": "seo.brandedShareOfTopKeywords 69 (computed 152,646 of 220,570 top-100-keyword etv), sections homepage share 73. Top-100 keywords cover 80% of total etv, so branded traffic is at least 55% of the total estimate; 'most' holds and high confidence is fair."
+      "reason": "Honestly hedged at inferred/low, and the hedge names the right escape hatches. Both evidence items match summary.md (11 LinkedIn ads over a year, Meta no active ads in any country)."
     },
     {
       "where": "sections.acquisition[8]",
-      "verdict": "supported",
-      "reason": "seo.keywords: 'free online scheduling tool' position 1, volume 12100, url /; 'scheduling app' position 1, volume 9900, url /."
+      "verdict": "mislabeled",
+      "reason": "The counts are in collected.json inv-7 ('domainAdsTotal': '2000-3000', otherAdvertiserCount 72, with SAS Answering, Cyberwoven and Digible Inc among the named ten), but 'because customers use their booking links as ad landing pages — a distribution loop the company gets for free' is the interpretation, not the observation. Worth noting the 2,000–3,000 is all ads pointing to the domain while the ten named advertisers account for only ~33 ads in the sample, so 'spread across 72 other advertisers' reads more evenly than the data shows.",
+      "fix": "Status inferred, confidence medium, and say 'Between 2,000 and 3,000 ads from other advertisers point at calendly.com; the 72 named accounts are customers, resellers and agencies, which most likely means booking links used as ad landing pages.'"
     },
     {
       "where": "sections.acquisition[9]",
-      "verdict": "supported",
-      "reason": "sitemap.sections blog 286 (second after help 429); seo.sections blog etv 7596, pages 29, share 3."
+      "verdict": "mislabeled",
+      "reason": "The installs are real (summary.md stack table: Clearbit / HubSpot Breeze Intelligence on 8 pages, G2 buyer intent on 7), but 'which is the setup for routing interested companies to sales' is a conclusion. The inference guide rates reverse-IP tools 'high that the tool is set up, medium that it drives an outbound program'.",
+      "fix": "Status inferred, confidence medium."
     },
     {
       "where": "sections.acquisition[10]",
-      "verdict": "supported",
-      "reason": "Blog earns 3% of top-100-page estimated traffic from 286 sitemap URLs; the best blog page is /blog/how-to-share-your-google-calendar at ~2,156 and the best comparison post ~668. Medium confidence is fair given the guide's caveat that some content serves other purposes."
+      "verdict": "mislabeled",
+      "reason": "Both sitemap facts verify against sitemap-urls.json (17 /solutions/ URLs covering exactly the named verticals; all four cited /resources/ URLs exist among 75), but 'Behind the consumer-looking homepage sits a conventional B2B demand-gen library' is a characterization, not something read off the sitemap.",
+      "fix": "Status inferred, confidence high."
     },
     {
       "where": "sections.acquisition[11]",
+      "verdict": "contradicted",
+      "reason": "'Every open role is building the AI product' is contradicted by collected.json → jobs.postings. Of the 8 titles, five are not AI work: 'Full Stack Engineer - Trust and Safety', 'Senior Full Stack Engineer, Website Development', 'Senior Manager, Security Ops & Prod Security', 'Staff Platform Engineer' and 'Staff Product Manager, Meetings'. The claim's own second evidence item says only 'Three of the eight listed titles name AI work directly'. The first half (marketing 0, sales 0, customer 0) does match byRole.",
+      "fix": "\"No marketing, sales or support roles are open; the 8 open roles are all engineering, product and security, and three of them name AI work directly.\""
+    },
+    {
+      "where": "sections.acquisition[12]",
       "verdict": "supported",
-      "reason": "seo.pages: /john-haller/itc ~12,447 visits across 16 keywords ('itc timing' alone is 12,438). Other user booking pages in the top 100 (jcmbarbershop 702, agendamientoorlando 253, etherealenergy 175 and six smaller) total ~1,465, excluding /app/ URLs. Low confidence fits."
+      "reason": "Correctly unknown, and the evidence matches summary.md: 'Detail pages read for the 3 newest ads: 0 ran through the capture date ... no run dates shown', with no spend figures anywhere in the ad data."
     },
     {
       "where": "sections.funnel[0]",
-      "verdict": "mislabeled",
-      "reason": "Facts check out: 'Get started for free' is in the nav on 6 of 7 pages (missing on signup.md) and home.md has 'Sign up with Google', 'Sign up with Microsoft', 'Sign up with email \u2022 No credit card required'. 'The primary conversion is free signup' is a conclusion drawn from CTA placement, so it belongs in an inferred claim.",
-      "fix": "Status inferred, confidence high (same text). Or keep seen and drop the lead: \"'Get started for free' is in the nav of 6 of the 7 captured pages, and the homepage offers Google and Microsoft signup with 'No credit card required'.\""
+      "verdict": "supported",
+      "reason": "pages/home.md hero: 'Sign up with Google', 'Sign up with Microsoft', 'Sign up with email • No credit card required'; pages/signup.md: 'Continue with Google or Microsoft to connect your calendar.'"
     },
     {
       "where": "sections.funnel[1]",
-      "verdict": "supported",
-      "reason": "signup.md: 'TRY TEAMS PLUS EXPERIENCE FREE', 'Explore premium features with your free 14-day trial', 'No credit card required. Upgrade anytime.'; meta description 'free for 14 days'."
+      "verdict": "contradicted",
+      "reason": "pages/signup.md's own heading is 'Create a free account', followed by 'No credit card required. Upgrade anytime.' — so the page does sell the free plan. The 'TRY TEAMS PLUS EXPERIENCE FREE / Explore premium features with your free 14-day trial' block is a side panel listing trial features; nothing in the capture shows that signing up starts everyone on that trial (collected.json → events is empty and no signup was submitted).",
+      "fix": "\"The signup page leads with 'Create a free account' but merchandises a 14-day Teams Plus trial alongside it, listing AI meeting notes and branding removal as the premium hook.\""
     },
     {
       "where": "sections.funnel[2]",
-      "verdict": "supported",
-      "reason": "'Talk to sales' is in the nav on all 7 page files and links to /contact; collected.json forms show mktoForm_2588 with FirstName, LastName, Email, How_do_you_plan_on_using_Calendly__c, Form_Comments__c. The 'intended use' dropdown is a team-size selector ('With a small team (2-10 users)' to '50+ users'), per contact.md."
+      "verdict": "mislabeled",
+      "reason": "The form facts are exact (pages/contact.md and summary.md both list FirstName, LastName, Email, How_do_you_plan_on_using_Calendly__c, Form_Comments__c, with options from 'Hosting meetings myself' to 'Across departments or multiple teams (50+ users)'), but 'deliberately low-friction' attributes intent. The fifth field is also an open 'How can we help? (optional)', so seat count is the only qualifying question rather than the only thing asked.",
+      "fix": "\"The sales form is short: five fields, one qualifying question, and seat band is the only qualification asked for.\" Or relabel inferred."
     },
     {
       "where": "sections.funnel[3]",
       "verdict": "supported",
-      "reason": "Field names How_do_you_plan_on_using_Calendly__c and Form_Comments__c use Salesforce's custom-field suffix; with a Marketo form this is a strong signal. High is fair."
+      "reason": "Marketo instance 482-NMZ-854 on 8 pages is in summary.md's stack table, and the __c suffix on How_do_you_plan_on_using_Calendly__c and Form_Comments__c is standard Salesforce custom-field naming. Inferred/high is right — the CRM itself is never exposed."
     },
     {
       "where": "sections.funnel[4]",
       "verdict": "supported",
-      "reason": "network.json: StatsigSectionExperiments script on calendly.com and ss.calendly.com/prod-sync and /prod-health on all 7 pages."
+      "reason": "Statsig (feature management) on all 8 captured pages per the stack table, and the claim is careful to scope the caveat to this capture."
     },
     {
       "where": "sections.funnel[5]",
-      "verdict": "overstated",
-      "reason": "Statsig's SDK and a 'StatsigSectionExperiments' bundle load on all 7 pages, which supports section-level testing, but nothing in the capture shows the homepage hero is an experiment or that variants differ between visits.",
-      "fix": "Page sections are set up for A/B testing through Statsig, so some sections may differ between visitors. Which sections are tested isn't visible. (inferred, medium)"
+      "verdict": "supported",
+      "reason": "Maze (surveys) and Intercom (app exkcomf1) are both on 8/8 pages in summary.md's stack table. 'Conversion research' is a loose gloss for Maze, which is a user-research and survey tool rather than session replay, but the installs are accurate."
     },
     {
       "where": "sections.funnel[6]",
       "verdict": "supported",
-      "reason": "network.json: snippet.maze.co loader and prompts.maze.co/api/widgets on all 7 pages; no survey text appears in the page files."
+      "reason": "Both endpoints appear in summary.md's first-party tagging section (evs.s.calendly.com/v1/projects/.../settings and api.s.calendly.com/v1/p). The inference guide puts first-party tagging squarely at 'an attempt to keep tracking working with ad blockers and cookie limits', so inferred/high is fair; 'ad measurement' is a small reach beyond the Segment endpoints shown."
     },
     {
       "where": "sections.funnel[7]",
       "verdict": "supported",
-      "reason": "collected.json events is empty; only page_view and consent_update calls to Google appear in network.json."
+      "reason": "Correctly unknown: collected.json → events is an empty array, and the capture loads pages without submitting forms."
     },
     {
       "where": "sections.retention[0]",
       "verdict": "supported",
-      "reason": "network.json: api.s.calendly.com/v1/p, /v1/i, /v1/t and evs.s.calendly.com/v1/projects/.../settings on all 7 pages; no segment.com or segment.io host appears."
+      "reason": "Segment, Amplitude and Marketo are all on 8/8 pages in the stack table, and the first-party Segment proxies corroborate the wappalyzer-only Segment detection. The guide rates product analytics plus a CDP as a mature product-led data setup; inferred/high is defensible."
     },
     {
       "where": "sections.retention[1]",
       "verdict": "supported",
-      "reason": "First-party Segment hosts on all 7 pages; the inference guide maps first-party tagging to a mature team and resilience to ad blockers. Medium is fair."
+      "reason": "429 of 1,073 sitemap URLs is 40% and the largest section by a wide margin (blog 287 is next). 'Tens of millions of low-touch users' is backed by the '50M+' figure on pages/about.md and pages/contact.md. Inferred/medium fits."
     },
     {
       "where": "sections.retention[2]",
-      "verdict": "supported",
-      "reason": "network.json: api-sr.amplitude.com and sr-client-cfg.amplitude.com on all 7 pages, plus an Amplitude plugin loaded through evs.s.calendly.com."
+      "verdict": "overstated",
+      "reason": "'Separate properties' only applies to community.calendly.com. /learn lives on the main domain (sitemap-urls.json lists /learn plus 19 sub-pages on calendly.com), so it is a site section, not a separate property. 'That also earn search traffic' is only shown for the community subdomain (~844 visits from 20 keywords); summary.md's traffic-by-section table has no row for /learn at all.",
+      "fix": "\"A 19-page /learn hub sits on the main site and a separate community subdomain earns its own search traffic — one community page is among the top 20 pages at about 844 estimated visits.\""
     },
     {
       "where": "sections.retention[3]",
-      "verdict": "supported",
-      "reason": "munchkin.marketo.net and 482-nmz-854.mktoresp.com on 6 pages, not the homepage (the homepage loads only Marketo forms2 from pages.calendly.com). Medium is fair; Segment also loads Braze plugins (evs.s.calendly.com/next-integrations/actions/braze-cloud-plugins), so lifecycle messaging may be split, but that doesn't contradict marketing email in Marketo."
+      "verdict": "overstated",
+      "reason": "The counts are right (4 of 12 headlines name Notetaker; the lead story is the Callie one), but 'rather than to win new logos' has nothing behind it — a public customer-stories page is the standard prospect asset, and nothing in the capture shows who it is shown to. The second evidence item also undersells the facet: pages/customers.md lists 18 features (Analytics, API, Browser Extension, Collective, Event Types, Integrations, Meeting Polls, Round Robin, Routing, Security Controls, Website Embed, Workflows and more), not the six AI-and-payments ones quoted.",
+      "fix": "Drop 'rather than to win new logos' and lower to low confidence: \"Recent customer stories lead with the new AI products — the featured story is about Callie and four of 12 headlines name Notetaker.\""
     },
     {
       "where": "sections.retention[4]",
       "verdict": "supported",
-      "reason": "network.json: widget.intercom.io, js.intercomcdn.com and api-iam.intercom.io on all 7 pages."
+      "reason": "Correctly unknown; the inference guide lists churn and retention rates among the things a website cannot show."
     },
     {
-      "where": "sections.retention[5]",
+      "where": "sections.content_strategy[0]",
       "verdict": "supported",
-      "reason": "collected.json sitemap: totalUrls 1072, help 429, the largest section."
+      "reason": "pages/blog.md lists exactly 13 posts, newest 'October 7, 2026' and oldest 'February 27, 2026', with 'Load more' below — so 13 is a count of the page, not a figure printed on it (which is what verify.json's warning flags). Since the index is reverse-chronological, 13 posts over that span is a sound read."
     },
     {
-      "where": "sections.retention[6]",
+      "where": "sections.content_strategy[1]",
       "verdict": "supported",
-      "reason": "No churn, expansion or lifecycle email content in the captured pages."
+      "reason": "All four quoted titles are on pages/blog.md, and every one of the 13 posts listed there is about a Calendly capability or integration (MCP, Typeform, Notetaker, invoices, Zapier, contacts, meeting packages, payment links, Stripe, payments). The mcp-server quote is in content/blog-mcp-server.md. Inferred/high is justified."
+    },
+    {
+      "where": "sections.content_strategy[2]",
+      "verdict": "supported",
+      "reason": "Both quotes are in the sampled posts (content/blog-mcp-server.md on the Claude connector and ChatGPT plugin; content/blog-ai-voice-agents.md 'we'll walk through seven AI platforms using Calendly'). Inferred/medium is right for calling it a deliberate cluster off two posts."
+    },
+    {
+      "where": "sections.content_strategy[3]",
+      "verdict": "overstated",
+      "reason": "The traffic figures match summary.md (how-to-share-your-google-calendar ~2,156 visits/674 keywords; best-planner-apps-for-students ~462/192), but neither has a publish date anywhere in the evidence, so 'old' is not established for the posts that actually earn the traffic. The one post with a date in the evidence, online-collaboration-tools (2023-02-22, 2,367 words, recommending Zoom/Figma/Asana — all confirmed in collected.json → content), is not among the top-20 pages by estimated traffic at all. The off-topic reading holds; the dating does not.",
+      "fix": "Lower to medium confidence and reword: \"The blog pages that earn search traffic are generic calendar and productivity guides unrelated to the new AI positioning — the top one, a Google Calendar how-to, earns about 2,156 estimated visits from 674 keywords.\""
+    },
+    {
+      "where": "sections.content_strategy[4]",
+      "verdict": "overstated",
+      "reason": "The 'no lead-capture form' half is solid — every sampled post in collected.json → content.posts has leadForms: []. But 'Posts hand readers to a free signup' is contradicted by the report's own content_posts, which assigns 'watch the webinar' to teacher-scheduling-tips and 'explore developer resources' to ai-voice-agents; content/blog-teacher-scheduling-tips.md carries 'Webinar: How Educators Drive Student Success with Calendly' and 'Watch the webinar', and content/blog-ai-voice-agents.md closes on 'Explore our developer resources'. A webinar is also exactly the gated-asset shape the claim denies. The spicedb post has no CTA at all.",
+      "fix": "\"Four of the six sampled posts close on 'Sign up FREE for Calendly'; two point at a webinar or developer docs instead, and no lead-capture form appeared in any of them.\""
+    },
+    {
+      "where": "sections.content_strategy[5]",
+      "verdict": "supported",
+      "reason": "inv-12 confirms the newest comparison post is 'May 9, 2025', and calendly-vs-doodle is in summary.md's top-20 pages at ~668 visits from 63 keywords. One nit in the evidence detail: 'the rest dated 2024' overlooks 'Calendly vs. Outreach Meetings' dated October 28, 2022."
+    },
+    {
+      "where": "sections.content_strategy[6]",
+      "verdict": "unsupported",
+      "reason": "No founder-authored post exists in the evidence. collected.json → content.posts gives the six sampled authors as Jon Casey (engineering), Hilary Yeganegi (x3), Rachel Burns and Thad Thompson; neither cited evidence item names a founder — the second only establishes that 'Introducing the new Calendly' is dated August 19, 2026 and categorised 'Company & Product'. Tope Awotona appears only in the pages/about.md leadership bios.",
+      "fix": "\"Authorship spans marketing and engineering — the sample includes an engineering post on authorization infrastructure alongside product-marketing posts — which suggests the blog is now a company channel rather than an SEO channel.\" Keep confidence low."
+    },
+    {
+      "where": "sections.history[0]",
+      "verdict": "supported",
+      "reason": "Both quotes verified verbatim: history/home-2025-01-01.md has H1 'Easy scheduling ahead' and 'Join 20 million professionals who easily book meetings with the #1 scheduling tool.'; history/home-2026-07-01.md still carries the old title and 'Calendly makes scheduling simple'."
+    },
+    {
+      "where": "sections.history[1]",
+      "verdict": "supported",
+      "reason": "summary.md's history table gives 1,451 words in October 2026 against 423 in July (3.4x), and the change list for 2026-07-01 → 2026-10-01 records the new title, new H1, changed description and the added CTAs including 'Create your account' and 'Contact sales'."
+    },
+    {
+      "where": "sections.history[2]",
+      "verdict": "contradicted",
+      "reason": "The pricing page did not follow a quarter later — it changed in the same window as the homepage. summary.md shows the last old pricing copy at 2026-07-26 ('Pick the perfect plan for your team Pricing', 974 words) and the new one at 2026-10-01 ('Add Notetaker and Callie...', 2,751 words), exactly parallel to the homepage's 2026-07-01 → 2026-10-01 change. The report's own history section summary says the two were rewritten 'in a single quarter'.",
+      "fix": "\"The pricing page was rewritten in the same quarter, turning from a plan chooser into an upsell page for the new AI products.\""
+    },
+    {
+      "where": "sections.history[3]",
+      "verdict": "supported",
+      "reason": "history/pricing-2025-01-01.md shows $10, $16 and 'Starts at $15k'; the 2026-10-01 copy and the live page still show $10/seat and $16/seat, with inv-10 putting $18 and $24 behind the add-on toggle. Inferred/medium is right for the strategic reading."
+    },
+    {
+      "where": "sections.history[4]",
+      "verdict": "overstated",
+      "reason": "Statsig's only appearance in the archived HTML is the 2025-07-01 snapshot, which summary.md marks '2 (thin)' and explicitly says thin copies 'are shown but not compared' — the 2025-10-01 copy lists Maze alone. So 'Statsig appearing' rests on a copy the collector excludes. The collector also warns that a tool leaving the HTML is not evidence it was removed, which the claim text (unlike its evidence detail) does not carry.",
+      "fix": "\"Maze entered the homepage HTML during 2025 as Optimizely dropped out of it, which points to a change in the experimentation and research stack — though tools can move into a tag manager rather than being removed.\" Keep medium confidence."
+    },
+    {
+      "where": "sections.history[5]",
+      "verdict": "overstated",
+      "reason": "The change list does record 'tools added Ketch, Marketo' between 2026-07-01 and 2026-10-01, but 'only at the October 2026 relaunch' reads as first-ever adoption. summary.md's stack table shows OneTrust running as a second cookie-compliance tool on all 8 live pages, and the collector warns that tags loaded by a tag manager never appear in archived HTML — Google Tag Manager has been in that HTML since January 2026.",
+      "fix": "\"Ketch and Marketo appear in the homepage HTML for the first time in the October 2026 copy, alongside the new positioning — though tag-manager-loaded tools never show in archived HTML.\""
+    },
+    {
+      "where": "section_summaries.acquisition",
+      "verdict": "contradicted",
+      "reason": "'Every open job is in product or engineering' leaves out the Security department, which collected.json → jobs.byDepartment lists as Engineering 4, Product 3, Security 1 ('Senior Manager, Security Ops & Prod Security').",
+      "fix": "\"...and every open job is in engineering, product or security.\""
+    },
+    {
+      "where": "section_summaries.stack",
+      "verdict": "unsupported",
+      "reason": "'Well-staffed' is not supported by anything in the section or the evidence folder — the capture shows installed tools, not headcount, and the only staffing data (collected.json → jobs) shows zero open marketing roles, which says nothing about team size either.",
+      "fix": "\"A mature setup: Segment feeding Amplitude, Marketo for lead capture, Statsig for testing, Maze for research and Intercom for chat, with tracking proxied through first-party calendly.com subdomains.\""
+    },
+    {
+      "where": "section_summaries.content_footprint",
+      "verdict": "overstated",
+      "reason": "'The August–October 2026 lastmod spike reflects the sitewide relaunch, not new publishing' is an unhedged inference that no claim in the report makes, and summary.md's own guidance treats lastmod as unreliable. The counts mix two tallies in collected.json → sitemap — 429 help and 287 blog come from 'top sections' while 99 integrations, 61 customers and 75 resources come from 'page patterns' (the section counts are 97, 60 and 75).",
+      "fix": "Hedge it: \"The August–October 2026 lastmod spike most likely reflects the sitewide relaunch rather than new publishing.\" Take the counts from one tally."
+    },
+    {
+      "where": "section_summaries.content_strategy",
+      "verdict": "unsupported",
+      "reason": "'Written in 2021–2023' is not supported for the posts that earn the traffic. The only 2021 and 2023 dates in collected.json → content.posts belong to teacher-scheduling-tips (2021-10-28) and online-collaboration-tools (2023-02-22), neither of which appears in summary.md's top-20 pages by estimated traffic; the posts that do earn it carry no publish date in the evidence.",
+      "fix": "\"...while its search traffic still comes from generic calendar and productivity guides rather than the new posts.\""
+    },
+    {
+      "where": "section_summaries.funnel",
+      "verdict": "contradicted",
+      "reason": "Repeats the funnel[1] error: 'starts everyone on a 14-day Teams Plus trial rather than the free plan' is contradicted by pages/signup.md, whose heading is 'Create a free account' with 'No credit card required. Upgrade anytime.'",
+      "fix": "\"One free-signup funnel built on Google and Microsoft OAuth, with a 14-day Teams Plus trial merchandised alongside the free account, plus a five-field sales form gated on seat count.\""
+    },
+    {
+      "where": "section_summaries.search",
+      "verdict": "overstated",
+      "reason": "'Search is Calendly's biggest channel' asserts a cross-channel comparison the data cannot make — the same problem as acquisition[0]. The rest (73%, 69%, blog 3%, Square/Zapier/Setmore) matches summary.md.",
+      "fix": "\"Search is Calendly's biggest measurable channel and its most concentrated risk: ...\""
+    },
+    {
+      "where": "section_summaries.retention",
+      "verdict": "overstated",
+      "reason": "States as fact that 'customer stories and the pricing page are both being used to push existing users onto Notetaker and Callie', dropping the hedge the underlying claim carries — retention[3] is inferred at medium confidence, and the 'existing users rather than new logos' part is itself unsupported (see that item).",
+      "fix": "\"...while the pricing page upsells Notetaker and Callie and recent customer stories appear to be doing the same.\""
     }
   ]
 }

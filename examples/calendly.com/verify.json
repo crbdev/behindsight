@@ -1,16 +1,16 @@
 {
   "summary": {
-    "checkedAt": "2026-10-28T10:54:57.693Z",
-    "claims": 43,
-    "citations": 55,
+    "checkedAt": "2026-10-29T07:24:34.980Z",
+    "claims": 54,
+    "citations": 103,
     "problems": 0,
-    "warnings": 1
+    "warnings": 4
   },
   "results": [
     {
       "section": "business_model",
       "index": 0,
-      "text": "Pricing is per seat: a free plan, then Standard at $10 and Teams at $16 per seat per month when billed yearly. Monthly-billing prices weren't captured.",
+      "text": "Calendly sells per-seat subscriptions across four tiers: a free plan, Standard at $10 per seat per month, Teams at $16, and Enterprise starting at $15k a year.",
       "status": "seen",
       "problems": [],
       "warnings": []
@@ -18,7 +18,7 @@
     {
       "section": "business_model",
       "index": 1,
-      "text": "Enterprise starts at $15k a year with a 50-seat minimum, and its only CTA is 'Talk to sales'.",
+      "text": "The prices shown by default are annual rates; paying monthly costs $12 and $20 per seat.",
       "status": "seen",
       "problems": [],
       "warnings": []
@@ -26,23 +26,23 @@
     {
       "section": "business_model",
       "index": 2,
-      "text": "The business runs a hybrid motion: self-serve for individuals and teams, sales for large accounts.",
-      "status": "inferred",
-      "problems": [],
-      "warnings": []
-    },
-    {
-      "section": "business_model",
-      "index": 3,
-      "text": "Only hosts need a seat. Invitees don't need a seat or an account.",
+      "text": "The new AI products are sold as a packaging upgrade rather than a separate add-on: turning on Notetaker and Callie switches the plans to Standard Plus at $18 and Teams Plus at $24 per seat per month.",
       "status": "seen",
       "problems": [],
       "warnings": []
     },
     {
       "section": "business_model",
+      "index": 3,
+      "text": "The AI packaging raises the list price of a paid seat by 80% on Standard ($10 to $18) and 50% on Teams ($16 to $24), which makes existing paid users, not new signups, the most likely source of near-term revenue growth.",
+      "status": "inferred",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "business_model",
       "index": 4,
-      "text": "Each booked meeting therefore shows the product to someone who isn't paying, which is a built-in exposure loop.",
+      "text": "Headline per-seat list prices have not moved in nearly two years, so the Plus tiers are where the price increase went.",
       "status": "inferred",
       "problems": [],
       "warnings": []
@@ -50,15 +50,23 @@
     {
       "section": "business_model",
       "index": 5,
-      "text": "Payments are a product line: upfront booking payments, packages, invoices and payment links, through Stripe or PayPal.",
-      "status": "seen",
+      "text": "The motion is hybrid: self-serve through Teams, sales-led at Enterprise, with the handover pinned to a 50-seat floor.",
+      "status": "inferred",
       "problems": [],
       "warnings": []
     },
     {
       "section": "business_model",
       "index": 6,
-      "text": "Whether Calendly takes a fee on payments, its revenue and its paying customer count aren't visible from the site.",
+      "text": "Pricing is published in three currencies as separate list prices rather than as a converted figure.",
+      "status": "seen",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "business_model",
+      "index": 7,
+      "text": "Whether Calendly takes a cut of the payments its customers collect is unknown.",
       "status": "unknown",
       "problems": [],
       "warnings": []
@@ -66,7 +74,7 @@
     {
       "section": "positioning",
       "index": 0,
-      "text": "The homepage hero in this capture reads 'All the work around meetings, handled.', and a banner on all 7 captured pages introduces 'the new Calendly'.",
+      "text": "Calendly now claims the category of AI meeting management alongside scheduling, with the homepage promising that the whole job around a meeting is handled.",
       "status": "seen",
       "problems": [],
       "warnings": []
@@ -74,31 +82,31 @@
     {
       "section": "positioning",
       "index": 1,
-      "text": "Calendly is repositioning from scheduling toward AI-assisted meeting work, while keeping scheduling as the anchor claim.",
-      "status": "inferred",
+      "text": "The repositioning happened between 1 July and 1 October 2026 and replaced a pitch that had been stable for at least eighteen months.",
+      "status": "seen",
       "problems": [],
       "warnings": []
     },
     {
       "section": "positioning",
       "index": 2,
-      "text": "The site gives two different user counts: 'over 20 million users' and 'more than 50 million individuals and businesses'.",
-      "status": "seen",
+      "text": "The homepage still leads on scheduling leadership, which reads as using the existing market position as the entry point to the AI story rather than replacing it.",
+      "status": "inferred",
       "problems": [],
       "warnings": []
     },
     {
       "section": "positioning",
       "index": 3,
-      "text": "Four of the five homepage customer stories are founders (of small businesses and one nonprofit), each with an outcome number such as '$1,200 annual savings' or '100% attendance rate'. The fifth is Achievement First ('75 hours saved monthly').",
-      "status": "seen",
+      "text": "Social proof on the public site shifted from organisation counts to raw scale, with the Fortune 500 claim moved off the homepage onto the enterprise page.",
+      "status": "inferred",
       "problems": [],
       "warnings": []
     },
     {
       "section": "positioning",
       "index": 4,
-      "text": "Calendly publishes 'Calendly vs' blog posts, and the Doodle and YouCanBookMe comparisons earn the most estimated search traffic of them.",
+      "text": "The relaunch has not reached the rest of the site: the enterprise page, the comparison hub and the founder's own bio still carry the old pitch and old numbers.",
       "status": "seen",
       "problems": [],
       "warnings": []
@@ -106,31 +114,39 @@
     {
       "section": "positioning",
       "index": 5,
-      "text": "In search, Calendly's top 20 non-branded keywords overlap most with Square (16 of 20), Zapier (15), emailtooltester.com and Setmore (14 each), and Appointy, Picktime and Jotform (13 each). Doodle overlaps on only 3.",
-      "status": "seen",
+      "text": "Calendly's four biggest organic rivals are not the tools its comparison hub positions against.",
+      "status": "inferred",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "positioning",
+      "index": 6,
+      "text": "The public customer proof is mostly solo operators and very small businesses, which sits oddly against an enterprise tier that starts at 50 seats.",
+      "status": "inferred",
       "problems": [],
       "warnings": []
     },
     {
       "section": "acquisition",
       "index": 0,
-      "text": "LinkedIn's Ad Library lists 9 Calendly ads in the US. Of the 5 read, they cover customer stories, a creator story, a comparison guide and the 'new Calendly' launch. The library doesn't show whether each ad is still running, and the screenshot includes an event ad and a jobs ad.",
-      "status": "seen",
+      "text": "Organic search is the largest acquisition channel this capture can measure.",
+      "status": "inferred",
       "problems": [],
       "warnings": []
     },
     {
       "section": "acquisition",
       "index": 1,
-      "text": "Google's Ads Transparency Center shows no Calendly advertiser account with ads pointing to calendly.com in the US. The 2,000 to 3,000 ads that link to calendly.com come from other advertisers.",
-      "status": "seen",
+      "text": "Most of that search demand is people looking for Calendly by name, so it is a measure of brand strength more than of content discovery.",
+      "status": "inferred",
       "problems": [],
       "warnings": []
     },
     {
       "section": "acquisition",
       "index": 2,
-      "text": "Those other advertisers are most likely Calendly users sending people to their own booking pages.",
+      "text": "Most of Calendly's non-branded search traffic comes from short generic head terms it holds at position 1, not from long-tail content.",
       "status": "inferred",
       "problems": [],
       "warnings": []
@@ -138,15 +154,15 @@
     {
       "section": "acquisition",
       "index": 3,
-      "text": "Calendly's Facebook page has no active ads in the US Meta Ad Library.",
-      "status": "seen",
+      "text": "The blog is a quarter of the site's pages but earns only a sliver of its search traffic, so the content library is not carrying acquisition.",
+      "status": "inferred",
       "problems": [],
       "warnings": []
     },
     {
       "section": "acquisition",
       "index": 4,
-      "text": "The Google Ads tag (AW-725106552) loads its conversion and remarketing endpoints on all 7 captured pages, even though no live US Google ads were found. It is likely used for remarketing audiences, ads in other countries, or ads under a different account name.",
+      "text": "Customers' own Calendly booking pages rank in Google and pull in a measurable share of the domain's search traffic.",
       "status": "inferred",
       "problems": [],
       "warnings": []
@@ -154,23 +170,26 @@
     {
       "section": "acquisition",
       "index": 5,
-      "text": "Paid acquisition looks light and B2B-focused in this capture: LinkedIn has Calendly ads, and no Meta, TikTok or Reddit pixels loaded. Tags can differ by region, and this capture ran from outside the US.",
+      "text": "LinkedIn is the only platform where Calendly's own ads were found, and the creative splits three ways: team-oriented product ads, a thought-leadership video series and recruitment ads.",
+      "status": "seen",
+      "problems": [],
+      "warnings": [
+        "[ads] text quoted from ads/linkedin.jpg can't be checked automatically",
+        "[ads] text quoted from ads/linkedin.jpg can't be checked automatically"
+      ]
+    },
+    {
+      "section": "acquisition",
+      "index": 6,
+      "text": "Neither Meta's nor Google's ad library shows ads from a Calendly-named advertiser, so no live spend on either platform is visible — and no Meta pixel was detected on the site at all.",
       "status": "inferred",
       "problems": [],
       "warnings": []
     },
     {
       "section": "acquisition",
-      "index": 6,
-      "text": "Clearbit's visitor identification loads on 6 of the 7 captured pages (the homepage loads only Clearbit's form script), and G2 buyer-intent tracking on 6.",
-      "status": "seen",
-      "problems": [],
-      "warnings": []
-    },
-    {
-      "section": "acquisition",
       "index": 7,
-      "text": "Sales can see which companies visit the site and which are researching Calendly on G2.",
+      "text": "Paid advertising appears to be a minor channel for Calendly relative to its scale, though pauses, regional targeting and unverified advertiser accounts could all hide spend the libraries do not show.",
       "status": "inferred",
       "problems": [],
       "warnings": []
@@ -178,15 +197,15 @@
     {
       "section": "acquisition",
       "index": 8,
-      "text": "DataForSEO estimates about 276,000 monthly organic visits from Google in the US, from 34,184 ranking keywords, 810 of them at #1.",
-      "status": "seen",
+      "text": "Thousands of other advertisers' ads point at calendly.com, most likely because customers use their booking links as ad landing pages — a distribution loop the company gets for free.",
+      "status": "inferred",
       "problems": [],
       "warnings": []
     },
     {
       "section": "acquisition",
       "index": 9,
-      "text": "Most organic traffic is brand demand. Branded searches drive 69% of estimated traffic across the top 100 keywords, and the homepage takes 73% of the estimated traffic across the top 100 pages.",
+      "text": "A visitor-identification tool and a review-site intent tag are installed across the site, which is the setup for routing interested companies to sales.",
       "status": "inferred",
       "problems": [],
       "warnings": []
@@ -194,15 +213,15 @@
     {
       "section": "acquisition",
       "index": 10,
-      "text": "The homepage also ranks #1 for non-branded category searches such as 'free online scheduling tool' (12,100 monthly searches) and 'scheduling app' (9,900).",
-      "status": "seen",
+      "text": "Behind the consumer-looking homepage sits a conventional B2B demand-gen library aimed at departments and industries.",
+      "status": "inferred",
       "problems": [],
       "warnings": []
     },
     {
       "section": "acquisition",
       "index": 11,
-      "text": "The blog is the second-largest sitemap section (286 URLs) but earns about 3% of estimated organic traffic across the top 100 pages.",
+      "text": "No marketing, sales or support roles are open: the 8 open roles are all engineering, product and security, and three of them name AI work directly.",
       "status": "seen",
       "problems": [],
       "warnings": []
@@ -210,25 +229,15 @@
     {
       "section": "acquisition",
       "index": 12,
-      "text": "The blog's search-targeted posts aren't paying off much in search relative to its size.",
-      "status": "inferred",
+      "text": "How much Calendly spends on acquisition, and on which campaigns, is unknown.",
+      "status": "unknown",
       "problems": [],
       "warnings": []
     },
     {
-      "section": "acquisition",
-      "index": 13,
-      "text": "Some users' public booking pages rank in Google on their own. One conference booking page gets about 12,447 estimated visits from 'itc timing', and the other booking pages found total about 1,500.",
-      "status": "inferred",
-      "problems": [],
-      "warnings": [
-        "[claim] numbers not found in the data or the cited evidence: 1,500"
-      ]
-    },
-    {
       "section": "funnel",
       "index": 0,
-      "text": "'Get started for free' is in the nav of 6 of the 7 captured pages, and the homepage offers Google and Microsoft signup with 'No credit card required'.",
+      "text": "The primary conversion is a free account created with a Google or Microsoft login, which doubles as the calendar connection the product needs.",
       "status": "seen",
       "problems": [],
       "warnings": []
@@ -236,15 +245,15 @@
     {
       "section": "funnel",
       "index": 1,
-      "text": "Free signup is the primary conversion the site pushes, with sales as the secondary path.",
-      "status": "inferred",
+      "text": "The signup page leads with a free account but merchandises a 14-day Teams Plus trial alongside it, using the AI features and branding removal as the premium hook.",
+      "status": "seen",
       "problems": [],
       "warnings": []
     },
     {
       "section": "funnel",
       "index": 2,
-      "text": "Signup includes a free 14-day trial of Teams Plus features, with no credit card required.",
+      "text": "The sales form is short: five fields, one qualifying question, and seat band is the only qualification asked for.",
       "status": "seen",
       "problems": [],
       "warnings": []
@@ -252,23 +261,23 @@
     {
       "section": "funnel",
       "index": 3,
-      "text": "'Talk to sales' is the secondary CTA on all 7 captured pages and leads to a short Marketo form: first name, last name, email, intended use and comments.",
-      "status": "seen",
-      "problems": [],
-      "warnings": []
-    },
-    {
-      "section": "funnel",
-      "index": 4,
-      "text": "The sales form's custom fields end in '__c', the Salesforce suffix, so leads sync to Salesforce.",
+      "text": "Leads are captured into Marketo and the field names indicate a Salesforce back end.",
       "status": "inferred",
       "problems": [],
       "warnings": []
     },
     {
       "section": "funnel",
+      "index": 4,
+      "text": "An A/B testing tool runs on every captured page, so what any given visitor sees may differ from this capture.",
+      "status": "seen",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "funnel",
       "index": 5,
-      "text": "Statsig experimentation loads on all 7 captured pages, served through Calendly's own domains: experiment scripts on calendly.com and SDK calls to ss.calendly.com.",
+      "text": "Conversion research and live chat run alongside the tests on the marketing site.",
       "status": "seen",
       "problems": [],
       "warnings": []
@@ -276,7 +285,7 @@
     {
       "section": "funnel",
       "index": 6,
-      "text": "Content on the site is likely under active A/B testing, so what a visitor sees can differ between visits. The capture doesn't show which sections are tested.",
+      "text": "Tracking is routed through Calendly's own subdomains, which keeps analytics and ad measurement working against ad blockers and browser cookie limits.",
       "status": "inferred",
       "problems": [],
       "warnings": []
@@ -284,15 +293,7 @@
     {
       "section": "funnel",
       "index": 7,
-      "text": "Maze's research snippet loads on all 7 captured pages, so on-site prompts or surveys can be shown. None appeared in the capture.",
-      "status": "seen",
-      "problems": [],
-      "warnings": []
-    },
-    {
-      "section": "funnel",
-      "index": 8,
-      "text": "Where conversions are reported isn't visible. The capture only loads pages, so no signup or form event could fire.",
+      "text": "Which conversion events Calendly optimises toward could not be observed.",
       "status": "unknown",
       "problems": [],
       "warnings": []
@@ -300,23 +301,25 @@
     {
       "section": "retention",
       "index": 0,
-      "text": "Segment loads through Calendly's own subdomains (s.calendly.com) instead of Segment's servers.",
-      "status": "seen",
-      "problems": [],
-      "warnings": []
-    },
-    {
-      "section": "retention",
-      "index": 1,
-      "text": "Routing Segment through its own domain keeps tracking working when ad blockers block Segment's domains, a sign of a mature data setup.",
+      "text": "The product-data stack is mature and built for lifecycle work: a CDP feeding product analytics, with marketing automation alongside.",
       "status": "inferred",
       "problems": [],
       "warnings": []
     },
     {
       "section": "retention",
+      "index": 1,
+      "text": "Self-serve support is the single largest content investment on the site, which is what a product with tens of millions of low-touch users requires.",
+      "status": "inferred",
+      "problems": [],
+      "warnings": [
+        "[sitemap] percentages not in the data (may be computed): 40"
+      ]
+    },
+    {
+      "section": "retention",
       "index": 2,
-      "text": "Amplitude product analytics loads on all 7 captured marketing pages.",
+      "text": "A 19-page learning hub sits on the main site and a separate community subdomain earns its own search traffic.",
       "status": "seen",
       "problems": [],
       "warnings": []
@@ -324,7 +327,7 @@
     {
       "section": "retention",
       "index": 3,
-      "text": "Marketo tracking loads on 6 of the 7 captured pages (not the homepage), so marketing email and lead nurturing likely run in Marketo.",
+      "text": "Recent customer stories lead with the new AI products, which looks like merchandising adoption to the existing base.",
       "status": "inferred",
       "problems": [],
       "warnings": []
@@ -332,24 +335,114 @@
     {
       "section": "retention",
       "index": 4,
-      "text": "Intercom chat loads on all 7 captured pages.",
-      "status": "seen",
-      "problems": [],
-      "warnings": []
-    },
-    {
-      "section": "retention",
-      "index": 5,
-      "text": "The help section is the largest part of the sitemap: 429 of 1,072 URLs.",
-      "status": "seen",
-      "problems": [],
-      "warnings": []
-    },
-    {
-      "section": "retention",
-      "index": 6,
-      "text": "Churn, expansion and lifecycle email content aren't visible from the public site.",
+      "text": "Churn, retention and expansion rates are unknown.",
       "status": "unknown",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "content_strategy",
+      "index": 0,
+      "text": "Calendly publishes rarely now — about 13 posts across the eight months to October 2026.",
+      "status": "seen",
+      "problems": [],
+      "warnings": [
+        "[page] numbers not found on the page: 13"
+      ]
+    },
+    {
+      "section": "content_strategy",
+      "index": 1,
+      "text": "Recent posts are product marketing, not search bait: almost everything published in 2026 explains a new Calendly capability or integration.",
+      "status": "inferred",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "content_strategy",
+      "index": 2,
+      "text": "An AI-integration cluster has emerged as the one genuinely new content bet, positioning Calendly as the scheduling layer other AI tools call.",
+      "status": "inferred",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "content_strategy",
+      "index": 3,
+      "text": "The blog pages that earn search traffic are generic calendar and productivity guides unrelated to the new AI positioning.",
+      "status": "inferred",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "content_strategy",
+      "index": 4,
+      "text": "Posts hand readers to a free signup rather than to a gated asset; no lead-capture form appeared in any sampled post.",
+      "status": "seen",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "content_strategy",
+      "index": 5,
+      "text": "The bottom-of-funnel comparison cluster has been left to go stale even though it still ranks.",
+      "status": "inferred",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "content_strategy",
+      "index": 6,
+      "text": "Authorship spans marketing and engineering, which suggests the blog is now used as a company channel rather than an SEO channel.",
+      "status": "inferred",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "history",
+      "index": 0,
+      "text": "For most of the archived period Calendly sold one thing — easy scheduling — and the pitch barely moved.",
+      "status": "seen",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "history",
+      "index": 1,
+      "text": "In the quarter to 1 October 2026 the company rewrote the homepage end to end, tripling its length and swapping the category from scheduling software to AI meeting tools.",
+      "status": "seen",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "history",
+      "index": 2,
+      "text": "The pricing page was rewritten in the same quarter, turning from a plan chooser into an upsell page for the new AI products.",
+      "status": "seen",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "history",
+      "index": 3,
+      "text": "Through all of it the price card stayed put, so Calendly chose to monetise the AI launch through new Plus tiers instead of raising the price of what people already bought.",
+      "status": "inferred",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "history",
+      "index": 4,
+      "text": "Maze entered the homepage HTML during 2025 as Optimizely dropped out of it, which points to a change in the experimentation and research stack.",
+      "status": "inferred",
+      "problems": [],
+      "warnings": []
+    },
+    {
+      "section": "history",
+      "index": 5,
+      "text": "Ketch and Marketo appear in the homepage HTML for the first time in the October 2026 copy, alongside the new positioning.",
+      "status": "inferred",
       "problems": [],
       "warnings": []
     }
