@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 // Collects public evidence about a company's marketing from its website:
-// key page content, a network grab (pixels, tags, IDs), Wappalyzer detections
-// and the sitemap, written to one folder for the agent to read.
+// key page content, a network grab (pixels, tags, IDs), Wappalyzer detections, the sitemap,
+// a content sample, public ad libraries and open job posts, written to one folder for the agent to read.
 //
 // Usage: node scripts/collect.mjs <domain-or-url> [--out <dir>] [--pages <url,url>]
 //        [--max-pages 7] [--wait 6000] [--no-consent] [--no-wappalyzer]
 //        [--no-seo] [--seo-location 2840] [--seo-language en] [--no-ads] [--ads-country US]
-//        [--no-content] [--content-posts 20]
+//        [--no-content] [--content-posts 20] [--no-jobs]
 //
 // Search data is added when DATAFORSEO_LOGIN and DATAFORSEO_PASSWORD are set in the
 // environment, the skill's .env file or ~/.config/dataforseo/.env.
@@ -20,7 +20,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gunzipSync } from 'node:zlib';
 import { collectSeo, collectSerpCompetitors, createClient, enrichSeo, seoCredentials } from './seo.mjs';
-import { collectAds } from './ads.mjs';
+import { brandCandidates, collectAds } from './ads.mjs';
+import { collectJobs } from './jobs.mjs';
 import { cadence, collectContent, savePosts } from './content.mjs';
 import { acceptConsent, extractEvents, extractPage, hostMatches, isLocale, loadEnv, registrableDomain, siteHelpers, sleep } from './lib.mjs';
 
@@ -43,7 +44,7 @@ const MARKETING_CATEGORIES = new Set([
 // ---------- arguments ----------
 
 const args = process.argv.slice(2);
-const opts = { maxPages: 7, wait: 6000, consent: true, wappalyzer: true, content: true, contentPosts: 20, ads: true, adsCountry: 'US', seo: true, seoLocation: 2840, seoLanguage: 'en', pages: [], out: null };
+const opts = { maxPages: 7, wait: 6000, consent: true, wappalyzer: true, content: true, contentPosts: 20, jobs: true, ads: true, adsCountry: 'US', seo: true, seoLocation: 2840, seoLanguage: 'en', pages: [], out: null };
 let target = null;
 for (let i = 0; i < args.length; i++) {
   const a = args[i];
@@ -56,6 +57,7 @@ for (let i = 0; i < args.length; i++) {
   else if (a === '--no-seo') opts.seo = false;
   else if (a === '--no-ads') opts.ads = false;
   else if (a === '--no-content') opts.content = false;
+  else if (a === '--no-jobs') opts.jobs = false;
   else if (a === '--content-posts') opts.contentPosts = Number(args[++i]);
   else if (a === '--ads-country') opts.adsCountry = args[++i].toUpperCase();
   else if (a === '--seo-location') opts.seoLocation = Number(args[++i]);
@@ -63,7 +65,7 @@ for (let i = 0; i < args.length; i++) {
   else if (!a.startsWith('--')) target = a;
 }
 if (!target) {
-  console.error('Usage: node scripts/collect.mjs <domain-or-url> [--out dir] [--pages url,url] [--max-pages 7] [--wait 6000] [--no-consent] [--no-wappalyzer] [--no-seo] [--seo-location 2840] [--seo-language en] [--no-ads] [--ads-country US] [--no-content] [--content-posts 20]');
+  console.error('Usage: node scripts/collect.mjs <domain-or-url> [--out dir] [--pages url,url] [--max-pages 7] [--wait 6000] [--no-consent] [--no-wappalyzer] [--no-seo] [--seo-location 2840] [--seo-language en] [--no-ads] [--ads-country US] [--no-content] [--content-posts 20] [--no-jobs]');
   process.exit(1);
 }
 
@@ -244,6 +246,11 @@ if (!content.skipped) {
   await savePosts(content, outDir, slugify);
   content.cadence = cadence(content);
 }
+
+// Hiring: open roles from the company's public job board.
+const jobs = opts.jobs
+  ? await collectJobs({ context, origin: new URL(home.url || startUrl.href).origin, siteRoot, domain: siteHost, brands: brandCandidates({ domain: siteHost, homeTitle: home.title }), links: home.links || [], sitemapUrls: sitemapRaw.urls, outDir, log, slugify }).catch((e) => ({ status: 'error', error: e.message.split('\n')[0] }))
+  : { skipped: 'disabled with --no-jobs' };
 
 const ads = opts.ads
   ? await collectAds({ browser, userAgent, domain: siteHost, homeTitle: home.title, socials, country: opts.adsCountry, outDir, log })
@@ -534,6 +541,7 @@ const collected = {
   seo,
   ads,
   content,
+  jobs,
   captureRegion,
   wordpress: { plugins: [...wordpress.plugins].sort(), themes: [...wordpress.themes].sort() },
   wappalyzer: Array.isArray(wappalyzer) ? wappalyzer.map((w) => ({ url: w.url, error: w.error || null, count: (w.technologies || []).length })) : wappalyzer,
@@ -603,6 +611,7 @@ function buildSummary(c) {
   L.push('');
   L.push(...contentSummary(c.content));
   L.push(...adsSummary(c.ads));
+  L.push(...jobsSummary(c.jobs));
   if (c.seo.skipped) {
     L.push('## Search data', '', `Not collected (${c.seo.skipped}).`, '');
   } else {
@@ -656,6 +665,25 @@ function adsSummary(a) {
     }
     for (const ad of l.ads.slice(0, 12)) L.push(`- ${ad.text}${ad.headline ? ` | Headline: ${ad.headline}` : ''}`);
   } else L.push('', `### LinkedIn: ${l.status}${l.error ? ` (${l.error})` : ''}. ${l.note || ''}`);
+  L.push('');
+  return L;
+}
+
+function jobsSummary(j) {
+  if (!j || j.skipped) return ['## Hiring', '', `Not collected (${j?.skipped || 'unknown'}).`, ''];
+  if (j.status !== 'found') return ['## Hiring', '', `Job board: ${j.status}${j.error ? ` (${j.error})` : ''}. ${j.note || ''}${j.careersPage ? ` Careers page: ${j.careersPage}` : ''}`, ''];
+  const L = ['## Hiring', '', `Job board: ${j.ats} (${j.boardUrl}), matched because: ${j.match}.${j.companyOnBoard ? ` Company name on the board: ${j.companyOnBoard}.` : ''}`];
+  L.push(`- Open roles: ${j.openRoles}${j.postingsRead < j.openRoles ? ` (${j.postingsRead} read)` : ''}. ${j.datesShown ? `Posted in the last 30 days: ${j.postedLast30Days}; last 90 days: ${j.postedLast90Days}; oldest still open: ${j.oldestPosting}.` : 'The board shows no posting dates.'}${j.remoteShare !== null ? ` Remote: ${j.remoteShare}%.` : ''}`);
+  L.push(`- By role: marketing ${j.byRole.marketing}, sales ${j.byRole.sales}, customer success and support ${j.byRole.customer}, other ${j.byRole.other}. Roles are sorted by title, department and team; check them.`);
+  L.push(`- By department: ${j.byDepartment.map((d) => `${d.name} ${d.count}`).join(', ')}`);
+  L.push(`- By location: ${j.byLocation.map((d) => `${d.name} ${d.count}`).join(', ')}`);
+  if (j.toolsMentioned.length) L.push(`- Tools named in job posts (posts naming it; in marketing, sales or customer posts): ${j.toolsMentioned.map((t) => `${t.tool} ${t.posts} (${t.marketingPosts})`).join(', ')}`);
+  const gtm = j.postings.filter((p) => p.role !== 'other');
+  if (gtm.length) {
+    L.push('', '| Role | Title | Department / team | Location | Posted | Pay | File |', '|---|---|---|---|---|---|---|');
+    const cell = (v) => String(v || '').replace(/\|/g, '/');
+    for (const p of gtm) L.push(`| ${p.role} | ${cell(p.title)} | ${cell([p.department, p.team].filter(Boolean).join(' / '))} | ${cell(p.location)} | ${p.posted || ''} | ${cell(p.compensation)} | ${p.file || ''} |`);
+  }
   L.push('');
   return L;
 }

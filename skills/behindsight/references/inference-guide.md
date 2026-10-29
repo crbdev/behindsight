@@ -52,6 +52,18 @@ Price bands: use only prices you saw. Don't estimate enterprise prices.
 
 How an account is matched to the company: its name must match the brand (exactly, or starting with it as whole words, so "Linear Orbit, Inc." counts and "LinearB" doesn't) and it must be tied to the company by evidence: its ads link to the company's domain, or the company's site links to it (Facebook page, LinkedIn company page), or the platform verified it. Each result says why it matched. A status of `uncertain` means accounts named like the brand exist but none could be tied to the company; don't describe their ads as the company's. Name collisions are common for short brand names.
 
+## Hiring
+
+| Signal | Supports | Caveat |
+|---|---|---|
+| Several open marketing roles in one area (field, lifecycle, content, developer relations) | The company is building that function now | Open roles show growth, not team size |
+| Sales roles by segment (startups, mid-market, enterprise) and region | Where the sales motion is aimed and expanding | Titles vary; read the post |
+| Solutions engineers, implementation or customer success roles | A sales-assisted motion with onboarding for larger accounts | |
+| Tools named in marketing and sales posts | The tools the team works with or plans to | A post can list a tool as "nice to have"; quote it |
+| Reporting lines ("reports to the VP of Growth") | How marketing is organized | One post isn't the whole org chart |
+| Many roles posted in the last 30 days | Hiring is active now | Boards drop filled roles, so old posts may be evergreen |
+| No supported job board | Nothing about hiring | Many companies use Workday or their own careers pages; mark hiring unknown, not "not hiring" |
+
 ## Search data (when DataForSEO is enabled)
 
 All of these are modeled estimates. Compare them within a report; don't quote them as the company's real traffic.

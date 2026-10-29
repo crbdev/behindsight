@@ -58,6 +58,7 @@
   - `ads`: ad library data. `ref` names the platform and item ("meta: 1304008991871792", "google ads", "linkedin ads"), `detail` quotes the ad text or gives the counts.
   - `investigation`: evidence gathered with `investigate.mjs`. `ref` is the investigation ID (`inv-2`), `detail` quotes its text or gives its numbers.
   - `content`: a sampled post. `ref` is the post URL (or "content sample" for the sample as a whole), `detail` quotes it or gives its numbers.
+  - `jobs`: a job post or the job board as a whole. `ref` is the post URL (or "job board" for counts across all posts), `detail` quotes the post or gives the numbers.
   - `seo`: DataForSEO search data. `ref` names the item (a keyword, a page URL, "organic overview"), `detail` gives the estimate.
   - `external`: a source outside the site. `ref` must be a URL.
 
@@ -67,10 +68,10 @@
 |---|---|
 | `business_model` | What is sold, to whom, and how it's priced (per seat, usage, flat, one-time). Is there a free tier or trial? A rough price band. Self-serve, sales-led or both. |
 | `positioning` | The headline promise. Which category they claim. Who the page speaks to. The differentiators they lead with. What proof they use (logos, numbers, reviews). Who they compare themselves to. |
-| `acquisition` | Paid channels with tags installed. Organic and content investment from the sitemap. With search data: how big organic is, how much of it is branded, which sections and keywords earn it, and who they compete with in search. With ad library data: which platforms have live ads, how many, how recent, in which formats, and what they say. Partner, affiliate or review-site programs. Account-based or outbound signals (reverse-IP tools). |
+| `acquisition` | Paid channels with tags installed. Organic and content investment from the sitemap. With search data: how big organic is, how much of it is branded, which sections and keywords earn it, and who they compete with in search. With ad library data: which platforms have live ads, how many, how recent, in which formats, and what they say. With hiring data: which marketing and sales roles are open, what the posts say the team does, and where it's growing. Partner, affiliate or review-site programs. Account-based or outbound signals (reverse-IP tools). |
 | `funnel` | The primary and secondary CTAs and where they lead. Form tools and fields. Demo scheduling. Checkout. Interactive demos. Experimentation tools and which pages they run on. Conversion events that fire. |
 | `content_strategy` | The main topic clusters, with example posts. The mix of formats and funnel stages. Who the content is written for. How often they publish (real dates only). How posts hand readers to the product (CTAs, lead magnets, gated downloads, newsletter). What they publish compared with what earns search traffic. |
-| `retention` | Email and lifecycle tools. In-app messaging and chat. Product analytics. Community, docs, changelog and education content. |
+| `retention` | Email and lifecycle tools. In-app messaging and chat. Product analytics. Community, docs, changelog and education content. Customer success and support hiring. |
 
 Aim for 3 to 7 claims per section. Use `unknown` claims for important questions the evidence can't answer instead of leaving a section thin. The report presents data, so there is no separate open-questions or next-steps list.
 
@@ -80,7 +81,7 @@ For e-commerce companies, at-a-glance labels like Offer, Price range, Shipping a
 
 ## section_summaries
 
-Every section opens with an "In short" summary, so readers get the gist before the detail. Write one for each claims section you include, and for each data section the report shows: `stack` (marketing stack), `ads` (advertising, when ad libraries were checked), `content_footprint` (sitemap) and `search` (organic search, when collected). The renderer refuses to build the report without them.
+Every section opens with an "In short" summary, so readers get the gist before the detail. Write one for each claims section you include, and for each data section the report shows: `stack` (marketing stack), `ads` (advertising, when ad libraries were checked), `content_footprint` (sitemap), `search` (organic search, when collected) and `jobs` (hiring, when a job board was found). The renderer refuses to build the report without them.
 
 - One or two sentences, at most about 40 words. Lead with the conclusion a marketer would act on, not a list of facts.
 - Condense the section's own claims. Don't introduce anything the section doesn't support, and keep the hedges: if the claims are inferred or low confidence, the summary says "likely" or "appears". For data sections, summarize what the data shows and what your claims elsewhere make of it.

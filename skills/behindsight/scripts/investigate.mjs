@@ -8,6 +8,7 @@
 //   node scripts/investigate.mjs seo <dir> competitors --keywords "<kw1>, <kw2>, ..."
 //   node scripts/investigate.mjs ads <dir> --platform google|meta|linkedin --name "<advertiser name>" [--country US]
 //   node scripts/investigate.mjs content <dir> <blog-index-url> [--posts 20]
+//   node scripts/investigate.mjs jobs <dir> <careers-page-or-job-board-url>
 
 import { chromium } from 'playwright';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
@@ -17,6 +18,7 @@ import { fileURLToPath } from 'node:url';
 import { extractEvents, extractPage, loadEnv, registrableDomain, siteHelpers, sleep } from './lib.mjs';
 import { collectAds } from './ads.mjs';
 import { cadence, collectContent, savePosts } from './content.mjs';
+import { collectJobs, findBoards } from './jobs.mjs';
 import { createClient, seoCredentials } from './seo.mjs';
 
 const SKILL_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -26,7 +28,7 @@ const UNSAFE_CLICK = /\b(submit|send|sign ?up|register|create (an )?account|log 
 
 const [command, dir, ...rest] = process.argv.slice(2);
 if (!command || !dir || !existsSync(path.join(dir || '', 'collected.json'))) {
-  console.error('Usage: node scripts/investigate.mjs <page|host|seo|ads|content> <teardown-dir> ... (see the header of this file)');
+  console.error('Usage: node scripts/investigate.mjs <page|host|seo|ads|content|jobs> <teardown-dir> ... (see the header of this file)');
   process.exit(1);
 }
 
@@ -344,9 +346,32 @@ async function investigateContent() {
     ok.map((p) => `- ${p.published || '?'} | ${p.title} | ${p.words} words | ${p.file}`).join('\n'));
 }
 
-const run = { page: investigatePage, host: investigateHost, seo: investigateSeo, ads: investigateAds, content: investigateContent }[command];
+// ---------- jobs: read a job board the collector missed ----------
+
+// Takes a job board URL (jobs.ashbyhq.com/acme, boards.greenhouse.io/acme…) or a careers page to scan.
+// Replaces the hiring data (the old result is kept as jobsPrevious).
+async function investigateJobs() {
+  const url = positional[0];
+  if (!url) throw new Error('jobs needs a careers page or job board URL');
+  const board = findBoards([url])[0] || null;
+  const browser = await chromium.launch();
+  const context = await browser.newContext({ userAgent: USER_AGENT, locale: 'en-US' });
+  const jobs = await collectJobs({
+    context, origin: new URL(url).origin, siteRoot: registrableDomain(siteHost), domain: siteHost, brands: [],
+    links: board ? [] : [{ href: url, text: 'Careers' }], board, outDir: dir, slugify: helpers.slugify, log: (m) => console.error('[jobs]', m)
+  });
+  await browser.close();
+  if (collected.jobs && !collected.jobsPrevious) collected.jobsPrevious = collected.jobs;
+  collected.jobs = jobs;
+  const digest = jobs.status === 'found'
+    ? `Hiring data replaced: ${jobs.openRoles} open roles on ${jobs.ats} (${jobs.boardUrl}). Marketing ${jobs.byRole.marketing}, sales ${jobs.byRole.sales}, customer ${jobs.byRole.customer}. Posts in jobs/; cite them with type "jobs".`
+    : `No job board read: ${jobs.status}. ${jobs.note || jobs.error || ''}`;
+  await save({ tool: 'jobs', url, status: jobs.status }, digest);
+}
+
+const run = { page: investigatePage, host: investigateHost, seo: investigateSeo, ads: investigateAds, content: investigateContent, jobs: investigateJobs }[command];
 if (!run) {
-  console.error(`Unknown command "${command}". Use page, host, seo, ads or content.`);
+  console.error(`Unknown command "${command}". Use page, host, seo, ads, content or jobs.`);
   process.exit(1);
 }
 try {
