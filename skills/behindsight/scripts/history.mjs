@@ -92,7 +92,8 @@ async function extract(page, html, matchVendor) {
     const ctas = [...new Set([...document.querySelectorAll('a, button')].map(words).filter((t) => t.length >= 3 && t.length <= 32 && /\b(get|start|try|sign|book|request|contact|buy|join|download|see|watch|talk|schedule|demo|free|create|shop)\b/i.test(t)))].slice(0, 10);
     return { title: clean(document.title), description: clean(document.querySelector('meta[name="description"]')?.content), h1: heads('h1', 3), h2: heads('h2', 8), ctas, text: body };
   }).catch(() => ({ title: '', description: '', h1: [], h2: [], ctas: [], text: '' }));
-  const flat = d.text.replace(/\s+/g, ' ');
+  // Cents often sit in their own element ("$19" "99"): join them back into "$19.99".
+  const flat = d.text.replace(/\s+/g, ' ').replace(/([$€£])\s?(\d+) (\d{2})(?= ?(?:USD|EUR|GBP|\/|per\b|mo\b))/gi, '$1$2.$3');
   const prices = [...new Set((flat.match(/(?:[$€£]\s?\d[\d,.]*|\b\d[\d,.]*\s?(?:USD|EUR|GBP))(?:\s?(?:\/|per)\s?(?:mo|month|yr|year|user|seat|member)\b(?:\s?(?:\/|per)\s?(?:mo|month|yr|year)\b)?)?/gi) || []).map(normPrice))].slice(0, 20);
   const tools = new Set();
   const ids = new Set(html.match(/\bGTM-[A-Z0-9]{4,9}\b/g) || []);

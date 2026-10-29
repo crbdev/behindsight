@@ -168,3 +168,11 @@ footer { font-size: 0.8rem; color: var(--ink-soft); border-top: 1px solid var(--
   .layout { grid-template-columns: minmax(0, 1fr); }
   details { display: block; }
 }
+
+/* Changes over time: one line per era */
+.timeline { list-style: none; margin: 4px 0 18px; padding: 0; border-left: 2px solid var(--rule); }
+.timeline li { display: grid; grid-template-columns: minmax(120px, 170px) minmax(0, 1fr); gap: 14px; padding: 6px 0 6px 14px; position: relative; }
+.timeline li::before { content: ''; position: absolute; left: -5px; top: 13px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+.timeline .when { font-family: var(--font-mono); font-size: 0.8rem; color: var(--ink-soft); padding-top: 2px; }
+#history h4 { margin: 14px 0 4px; font-size: 0.78rem; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-soft); font-weight: 500; }
+@media (max-width: 640px) { .timeline li { grid-template-columns: 1fr; gap: 2px; } }

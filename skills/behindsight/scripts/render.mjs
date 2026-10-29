@@ -29,7 +29,9 @@ const SECTIONS = [
   { key: 'acquisition', id: 'acquisition', title: 'Acquisition channels' },
   { key: 'funnel', id: 'funnel', title: 'Conversion funnel' },
   { key: 'retention', id: 'retention', title: 'Retention and lifecycle' },
-  { key: 'content_strategy', id: 'content-strategy', title: 'Content strategy', optional: true }
+  { key: 'content_strategy', id: 'content-strategy', title: 'Content strategy', optional: true },
+  // Rendered inside the Changes over time section, above the timeline.
+  { key: 'history', id: 'history', title: 'Changes over time', optional: true, inData: true }
 ];
 const STATUSES = ['seen', 'inferred', 'unknown'];
 const EVIDENCE_TYPES = ['page', 'network', 'stack', 'sitemap', 'event', 'seo', 'ads', 'content', 'jobs', 'history', 'investigation', 'external'];
@@ -93,9 +95,9 @@ function claimHtml(c) {
   return `<li class="claim">${chip(c.status)}<p>${esc(c.text)}</p>${c.status === 'inferred' ? `<span class="conf">${esc(c.confidence)} confidence</span>` : ''}${ev ? `<details><summary>Evidence (${c.evidence.length})</summary><ul class="evidence">${ev}</ul></details>` : ''}</li>`;
 }
 
-function sectionHtml({ key, id, title }) {
+function sectionHtml({ key, id, title, inData }) {
   const claims = findings.sections[key];
-  if (!claims) return '';
+  if (!claims || inData) return '';
   const extra = key === 'content_strategy' ? contentStrategyPanel() : '';
   const counts = STATUSES.map((s) => [s, claims.filter((c) => c.status === s).length]).filter(([, n]) => n).map(([s, n]) => `${n} ${s}`).join(' · ');
   return `<section id="${id}"><div class="section-head"><h2>${esc(title)}</h2><span class="count">${counts}</span></div>${summaryHtml(key)}<ul class="claims">${claims.map(claimHtml).join('')}</ul>${extra}</section>`;
@@ -376,9 +378,27 @@ function jobsHtml() {
 function historyHtml() {
   const h = collected.history;
   if (!h || h.skipped || !h.pages?.some((p) => p.rows?.length)) return '';
+  const claims = findings.sections.history || [];
+  const narrative = claims.length ? `<ul class="claims">${claims.map(claimHtml).join('')}</ul>` : '';
+  const month = (d) => new Date(`${d}T00:00:00Z`).toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+  // Consecutive readable copies with the same value form one era: first seen → last seen.
+  const eras = (rows, value) => {
+    const out = [];
+    for (const r of rows) {
+      const v = value(r);
+      if (!v) continue;
+      if (out.at(-1)?.value === v) { out.at(-1).to = r; continue; }
+      out.push({ value: v, from: r, to: r });
+    }
+    return out;
+  };
+  const timeline = (list, label) => list.length ? `<h4>${esc(label)}</h4><ol class="timeline">${list.map((e) => `<li><span class="when">${e.from.live ? 'Now' : link(e.from.archiveUrl, month(e.from.date))}${e.to !== e.from ? ` – ${e.to.live ? 'now' : month(e.to.date)}` : ''}</span><span>${esc(e.value)}</span></li>`).join('')}</ol>` : '';
   const blocks = h.pages.filter((p) => p.rows?.length).map((p) => {
-    const rows = [...p.rows, p.live].filter((r) => r && !r.error);
-    const table = `<table><thead><tr><th>Date</th><th>Headline</th><th>Prices on the page</th><th>Tools in the HTML</th></tr></thead><tbody>${rows.map((r) => `<tr${r.thin ? ' class="weak"' : ''}><td class="mono">${r.live ? `${esc(r.date)} (live)` : link(r.archiveUrl, r.date)}</td><td>${r.thin ? '<span class="weak">little text in this copy</span>' : esc(r.h1[0] || r.title)}</td><td class="mono">${esc(r.prices.slice(0, 6).join(', '))}</td><td>${esc(r.tools.join(', '))}</td></tr>`).join('')}</tbody></table>`;
+    const all = [...p.rows, p.live].filter((r) => r && !r.error);
+    const readable = all.filter((r) => !r.thin);
+    const headlines = timeline(eras(readable, (r) => r.h1[0] || r.title), 'Headline');
+    const prices = p.kind === 'pricing' ? timeline(eras(readable, (r) => r.prices.slice(0, 6).join(' · ')), 'Prices on the page') : '';
+    const table = `<table><thead><tr><th>Date</th><th>Headline</th><th>Prices on the page</th><th>Tools in the HTML</th></tr></thead><tbody>${all.map((r) => `<tr><td class="mono">${r.live ? `${esc(r.date)} (live)` : link(r.archiveUrl, r.date)}</td><td>${r.thin ? '<span class="weak">little text in this copy</span>' : esc(r.h1[0] || r.title)}</td><td class="mono">${esc(r.prices.slice(0, 6).join(', '))}</td><td>${esc(r.tools.join(', '))}</td></tr>`).join('')}</tbody></table>`;
     const changes = p.changes.filter((c) => c.title || c.h1 || c.prices || c.ctas || c.tools).map((c) => {
       const bits = [];
       if (c.h1) bits.push(`Headline: <span class="weak">${esc(c.h1.before || '(none)')}</span> → <b>${esc(c.h1.after || '(none)')}</b>`);
@@ -388,11 +408,12 @@ function historyHtml() {
       if (c.ctas) bits.push(both(c.ctas.added.length && `CTAs added "${esc(c.ctas.added.join('", "'))}"`, c.ctas.removed.length && `CTAs removed "${esc(c.ctas.removed.join('", "'))}"`));
       if (c.tools) bits.push(both(c.tools.added.length && `Tools added to the HTML: ${esc(c.tools.added.join(', '))}`, c.tools.removed.length && `no longer in the HTML: ${esc(c.tools.removed.join(', '))}`));
       return `<li><span class="weak mono">${esc(c.from)} → ${esc(c.to)}</span> ${bits.join('; ')}</li>`;
-    }).join('');
-    return `<h3>${esc(p.kind === 'home' ? 'Homepage' : 'Pricing page')}</h3><p class="note">${fmt(p.snapshotsAvailable)} monthly snapshots in the period; ${fmt(p.rows.length)} read.</p>${table}${changes ? `<details open><summary>What changed</summary><ul class="adlist">${changes}</ul></details>` : '<p class="note">No changes between readable copies.</p>'}`;
+    });
+    return `<h3>${esc(p.kind === 'home' ? 'Homepage' : 'Pricing page')}</h3>${headlines}${prices}
+<details><summary>Every snapshot (${all.length} of ${fmt(p.snapshotsAvailable)} monthly copies)</summary>${table}</details>${changes.length ? `<details><summary>Every change, snapshot to snapshot (${changes.length})</summary><ul class="adlist">${changes.join('')}</ul></details>` : ''}`;
   }).join('');
-  return `<section id="history"><div class="section-head"><h2>Changes over time</h2><span class="count">Wayback Machine · ${esc(h.years)} years</span></div>${summaryHtml('history')}
-<p class="lede">Archived copies of the homepage and pricing page, about one per quarter, read as HTML without running scripts. Pages built by JavaScript can archive with little text. Tools are only those written into the page HTML; tags loaded by a tag manager don't show, so a tool leaving the HTML doesn't prove it was removed.</p>${blocks}</section>`;
+  return `<section id="history"><div class="section-head"><h2>Changes over time</h2><span class="count">Wayback Machine · ${esc(h.years)} years</span></div>${summaryHtml('history')}${narrative}${blocks}
+<p class="note">From archived copies of the homepage and pricing page, about one per quarter, read as HTML without running scripts. Dates are when a copy was archived, so a change happened somewhere between two dates. Pages built by JavaScript can archive with little text. Tools are only those written into the page HTML; tags loaded by a tag manager don't show.</p></section>`;
 }
 
 // ---------- remaining sections ----------
@@ -436,7 +457,7 @@ function checksHtml() {
 // ---------- page ----------
 
 const nav = [
-  ...SECTIONS.filter((s) => findings.sections[s.key]).map((s) => [s.id, s.title]),
+  ...SECTIONS.filter((s) => findings.sections[s.key] && !s.inData).map((s) => [s.id, s.title]),
   ['stack', 'Marketing stack'],
   ...(adsData ? [['ads', 'Advertising']] : []),
   ['content', 'Content footprint'],
