@@ -92,7 +92,7 @@ const PAGE_KINDS = [
   { kind: 'demo', href: /\/(demo|book-a-demo|request-demo|get-a-demo|contact-sales|talk-to-sales)(\/|$|\?)|^\/sales(\/|$)/i, text: /(book a demo|request a demo|get a demo|schedule a demo|talk to sales|contact sales|talk to an expert)/i },
   { kind: 'customers', href: /^\/(customers|case-studies|customer-stories|stories|success-stories)(\/|$)/i, text: /^(customers|case studies|customer stories)$/i },
   { kind: 'about', href: /^\/(about|about-us|company|pages\/(about|about-us|our-story|story|mission))(\/|$)/i, text: /^(about|about us|company|our story|our mission)$/i },
-  { kind: 'blog', href: /^\/(blog|resources|insights|articles|learn)\/?$/i, text: /^(blog|resources|insights|learn)$/i },
+  { kind: 'blog', href: /^\/(blog|resources|articles|news|journal)\/?$/i, text: /^(blog|resources|articles|news|journal)$/i },
   { kind: 'collection', href: /^\/(collections|shop|category|categories)\/[^/]+\/?$/i, text: /^(shop|shop all|best ?sellers|new arrivals)$/i }
 ];
 
@@ -209,7 +209,7 @@ if (!opts.pages.length) {
     try { u = new URL(l.href); } catch { continue; }
     if (!isFirstParty(u.hostname) || u.hash || /\.(pdf|zip|png|jpg)$/i.test(u.pathname)) continue;
     const segs = u.pathname.split('/').filter(Boolean);
-    if (segs.length !== 1 || /^(login|log-in|signin|sign-in|account|cart|search|careers|jobs|legal|privacy|terms)$/i.test(segs[0]) || /menu|promo|banner|popup|modal/i.test(segs[0])) continue;
+    if (segs.length !== 1 || /^(login|log-in|signin|sign-in|account|cart|search|careers|jobs|legal|privacy|terms|home|homepage|index(\.html?)?)$/i.test(segs[0]) || /menu|promo|banner|popup|modal/i.test(segs[0])) continue;
     const href = (u.origin + u.pathname).replace(/\/$/, '');
     if (taken.has(href)) continue;
     taken.add(href);
@@ -552,7 +552,7 @@ console.log(outDir);
 
 function buildSummary(c) {
   const L = [];
-  L.push(`# Collected evidence: ${c.domain}`, '', `Capture region: browser time zone ${c.captureRegion?.timezone || '?'}${c.captureRegion?.regionalGoogleDomains?.length ? `, Google served ${c.captureRegion.regionalGoogleDomains.join(', ')}` : ''}. Ad libraries report ${c.ads?.country || 'n/a'}; search data is for ${c.seo?.location || 'n/a'}. Tags and consent can differ by region.`, '', `Captured ${c.capturedAt} · ${c.requestCount} network requests · consent banner: ${c.consent.banner ? `yes, clicked ${c.consent.clicked}` : 'none shown in this region (consent tools may still load and grant consent by default)'}`, '');
+  L.push(`# Collected evidence: ${c.domain}`, '', `Capture region: browser time zone ${c.captureRegion?.timezone || '?'}${c.captureRegion?.regionalGoogleDomains?.length ? `, Google served ${c.captureRegion.regionalGoogleDomains.join(', ')}` : ''}. ${c.ads?.country ? `Ad libraries report ${c.ads.country}` : 'Ad libraries not checked'}; ${c.seo?.location ? `search data is for ${c.seo.location}` : 'no search data'}. Tags and consent can differ by region.`, '', `Captured ${c.capturedAt} · ${c.requestCount} network requests · consent banner: ${c.consent.banner ? `yes, clicked ${c.consent.clicked}` : 'none shown in this region (consent tools may still load and grant consent by default)'}`, '');
   L.push('## Pages captured', '');
   for (const p of c.pages) {
     L.push(`### ${p.kind}: ${p.url}${p.error ? ` (FAILED: ${p.error})` : ''}`);
@@ -572,7 +572,9 @@ function buildSummary(c) {
   for (const s of c.stack) {
     L.push(`| ${s.name}${s.version ? ` ${s.version}` : ''} | ${s.category} | ${s.sources.join(' + ')} | ${s.ids.map((i) => `${i.label} ${i.value}`).join(', ')} | ${(s.pages.length ? s.pages : s.wpPages || []).length} |`);
   }
-  L.push('', 'Wappalyzer-only detections are pattern matches on page code; treat them as weaker than network hits.', '');
+  const wap = c.wappalyzer;
+  const wapOk = Array.isArray(wap) && wap.some((w) => !w.error);
+  L.push('', wapOk ? 'Wappalyzer-only detections are pattern matches on page code; treat them as weaker than network hits.' : `Wappalyzer did not run (${Array.isArray(wap) ? wap[0]?.error || 'failed' : wap?.error || 'disabled'}), so the stack comes from the network capture only. Infrastructure (CMS, framework, CDN) may be missing.`, '');
   if (c.firstPartyTagging.length) {
     L.push('## First-party / server-side tagging', '');
     for (const t of c.firstPartyTagging) L.push(`- ${t.name} on ${t.host} (e.g. ${t.example})`);
@@ -630,19 +632,28 @@ function adsSummary(a) {
   const g = a.google;
   if (g.status === 'found') {
     L.push(`### Google Ads Transparency Center: ${g.advertisers.map((x) => `${x.name} (${x.id}, ${x.adsTotal || x.adsRange || '?'} ads)`).join('; ')}`);
+    L.push(`- Matched because: ${g.advertisers.map((x) => x.match).join('; ')}.`);
     L.push(`- ${g.creativesFetched} creatives read. Formats: ${Object.entries(g.formats).map(([k, v]) => `${k} ${v}`).join(', ')}. Shown in the last 30 days: ${g.shownInLast30Days}. First shown ${g.firstShown}, last shown ${g.lastShown}.`);
     if (g.newByMonth.length) L.push(`- New creatives by month (first shown): ${g.newByMonth.map((m) => `${m.month}: ${m.count}`).join(', ')}`);
     L.push(`- Samples to look at: ${g.samples.map((x) => `${x.file} (${x.format})`).join(', ')}`);
   } else L.push(`### Google: ${g.status}${g.error ? ` (${g.error})` : ''}. ${g.note || ''}${g.domainAdsTotal ? ` Ads from any advertiser pointing to the domain: ${g.domainAdsTotal}.` : ''}`);
+  if (g.otherAdvertisers?.length) L.push(`- Other advertisers whose ads link to the domain (not the company; customers, resellers, affiliates or agencies), top ${g.otherAdvertisers.length} of ${g.otherAdvertiserCount}: ${g.otherAdvertisers.map((x) => `${x.name} (${x.adsInSample})`).join(', ')}`);
   const m = a.meta;
   if (m.status === 'found') {
     L.push('', `### Meta Ad Library: ${m.page.name} (page ${m.page.id}${m.page.verified ? ', verified' : ''})`);
-    L.push(`- Page verified: ${m.page.verified ? 'yes' : 'no'}. Active ads in ${a.country}: ${m.activeAds}; worldwide: ${m.activeAdsAllCountries}. Read ${m.adsRead} (${m.adsReadFrom}; the library doesn't show each ad's country); ${m.startedInLast30Days} started in the last 30 days; oldest still running since ${m.oldestActiveStart}; ${m.videoShare}% video. Screenshot: ${m.screenshot}`);
+    L.push(`- Matched because: ${m.match}. Page verified: ${m.page.verified ? 'yes' : 'no'}. Ads read that link to the domain: ${m.adsLinkingToDomain}. Active ads in ${a.country}: ${m.activeAds}; worldwide: ${m.activeAdsAllCountries}. Read ${m.adsRead} (${m.adsReadFrom}; the library doesn't show each ad's country); ${m.startedInLast30Days} started in the last 30 days; oldest still running since ${m.oldestActiveStart}; ${m.videoShare}% video. Screenshot: ${m.screenshot}`);
     for (const ad of m.ads.slice(0, 12)) L.push(`- [${ad.started}${ad.video ? ', video' : ''}] ${ad.text}${ad.headline ? ` | Headline: ${ad.headline}` : ''}${ad.cta ? ` | CTA: ${ad.cta}` : ''}`);
-  } else L.push('', `### Meta: ${m.status}${m.error ? ` (${m.error})` : ''}. ${m.note || ''}`);
+  } else {
+    L.push('', `### Meta: ${m.status}${m.error ? ` (${m.error})` : ''}. ${m.note || ''}`);
+    if (m.match) L.push(`- Matched because: ${m.match}.`);
+  }
   const l = a.linkedin;
   if (l.status === 'found') {
-    L.push('', `### LinkedIn Ad Library: ${l.advertiser}`, `- Ads matching the advertiser search (${l.scope}): ${l.adsMatchingSearch}. Read ${l.adsRead}. Screenshot: ${l.screenshot}`);
+    L.push('', `### LinkedIn Ad Library: ${l.advertiser}${l.paidFor && l.paidFor !== l.advertiser ? ` (paid for by ${l.paidFor})` : ''}`, `- Matched because: ${l.match}.`, `- Ads in the library (past year, all countries): ${l.adsMatchingSearch}; shown in ${a.country}: ${l.adsInCountry ?? '?'}. Read ${l.adsRead}. Screenshot: ${l.screenshot}`);
+    if (l.details?.length) {
+      L.push(`- Detail pages read for the ${l.details.length} newest ads: ${l.runningAtCapture} ran through the capture date.${l.campaigns?.length ? ` Campaign names in their links (utm_campaign): ${l.campaigns.join(', ')}.` : ''} Run dates and impressions only show for some ads.`);
+      for (const d of l.details) L.push(`  - ${d.headline || d.format || 'ad'}: ${d.ranFrom ? `ran ${d.ranFrom} to ${d.ranTo}` : 'no run dates shown'}${d.impressions ? `, ${d.impressions} impressions` : ''}${d.topCountries?.length ? ` (${d.topCountries.join(', ')})` : ''}${d.landingUrl ? ` → ${d.landingUrl}` : ''}`);
+    }
     for (const ad of l.ads.slice(0, 12)) L.push(`- ${ad.text}${ad.headline ? ` | Headline: ${ad.headline}` : ''}`);
   } else L.push('', `### LinkedIn: ${l.status}${l.error ? ` (${l.error})` : ''}. ${l.note || ''}`);
   L.push('');
@@ -653,7 +664,8 @@ function contentSummary(ct) {
   if (!ct || ct.skipped) return ['## Content sample', '', `Not collected (${ct?.skipped || 'unknown'}).`, ''];
   if (!ct.posts.length) return ['## Content sample', '', `No blog or article content found${ct.error ? ` (${ct.error})` : ''}.`, ''];
   const ok = ct.posts.filter((p) => !p.error);
-  const L = ['## Content sample', '', `${ok.length} posts read (source: ${ct.source === 'feed' ? `feed ${ct.feed}` : 'sitemap, so dates are last-modified, not published'}). Full text in content/.`];
+  const L = ['## Content sample', '', `${ok.length} posts read (source: ${ct.source === 'feed' ? `feed ${ct.feed}` : ct.source === 'blog index' ? 'the blog index page' : 'sitemap, so dates are last-modified, not published'}). Full text in content/.`];
+  if (ct.folders?.length) L.push(`- Article folders in the sitemap: ${ct.folders.map((f) => `/${f.folder}/ (${f.pages} pages)`).join(', ')}. If the blog lives somewhere else, rerun the sample with investigate.mjs content.`);
   if (ct.feedSummary) L.push(`- The feed lists ${ct.feedSummary.items} posts (${ct.feedSummary.oldest} to ${ct.feedSummary.newest})${ct.feedSummary.categories.length ? `; categories: ${ct.feedSummary.categories.map((c) => `${c.name} (${c.count})`).join(', ')}` : ''}`);
   if (ct.cadence?.length) L.push(`- Posts per month by publish date (sample only): ${ct.cadence.map((m) => `${m.month}: ${m.count}`).join(', ')}`);
   const authors = {};

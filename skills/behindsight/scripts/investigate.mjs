@@ -7,6 +7,7 @@
 //   node scripts/investigate.mjs seo <dir> keywords [--url-like <pattern>] [--limit 50]
 //   node scripts/investigate.mjs seo <dir> competitors --keywords "<kw1>, <kw2>, ..."
 //   node scripts/investigate.mjs ads <dir> --platform google|meta|linkedin --name "<advertiser name>" [--country US]
+//   node scripts/investigate.mjs content <dir> <blog-index-url> [--posts 20]
 
 import { chromium } from 'playwright';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
@@ -15,6 +16,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { extractEvents, extractPage, loadEnv, registrableDomain, siteHelpers, sleep } from './lib.mjs';
 import { collectAds } from './ads.mjs';
+import { cadence, collectContent, savePosts } from './content.mjs';
 import { createClient, seoCredentials } from './seo.mjs';
 
 const SKILL_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -24,7 +26,7 @@ const UNSAFE_CLICK = /\b(submit|send|sign ?up|register|create (an )?account|log 
 
 const [command, dir, ...rest] = process.argv.slice(2);
 if (!command || !dir || !existsSync(path.join(dir || '', 'collected.json'))) {
-  console.error('Usage: node scripts/investigate.mjs <page|host|seo|ads> <teardown-dir> ... (see the header of this file)');
+  console.error('Usage: node scripts/investigate.mjs <page|host|seo|ads|content> <teardown-dir> ... (see the header of this file)');
   process.exit(1);
 }
 
@@ -316,9 +318,35 @@ async function investigateAds() {
   await save(record, digest);
 }
 
-const run = { page: investigatePage, host: investigateHost, seo: investigateSeo, ads: investigateAds }[command];
+// ---------- content: resample posts from a different blog index ----------
+
+// Replaces the content sample (the old one is kept as contentPrevious), so content claims and
+// content_posts labels cite the new posts with type "content" as usual.
+async function investigateContent() {
+  const indexUrl = positional[0];
+  if (!indexUrl) throw new Error('content needs the blog index URL, e.g. https://example.com/news');
+  const folder = new URL(indexUrl).pathname.split('/').filter(Boolean)[0];
+  if (!folder) throw new Error('give the blog index URL with its folder, e.g. https://example.com/news');
+  const sitemap = existsSync(path.join(dir, 'sitemap-urls.json')) ? JSON.parse(await readFile(path.join(dir, 'sitemap-urls.json'), 'utf8')) : [];
+  const browser = await chromium.launch();
+  const context = await browser.newContext({ userAgent: USER_AGENT, locale: 'en-US' });
+  const content = await collectContent({
+    context, origin: new URL(indexUrl).origin, siteRoot: registrableDomain(siteHost), homePage: { links: [] }, indexUrl, onlyFolder: folder,
+    sitemapUrls: sitemap, seoPages: collected.seo?.pages || [], recent: Number(flags.posts) || 20, log: (m) => console.error('[content]', m)
+  });
+  await browser.close();
+  await savePosts(content, dir, helpers.slugify);
+  content.cadence = cadence(content);
+  if (collected.content && !collected.contentPrevious) collected.contentPrevious = collected.content;
+  collected.content = content;
+  const ok = content.posts.filter((p) => !p.error);
+  await save({ tool: 'content', indexUrl, posts: ok.length }, `Content sample replaced: ${ok.length} posts from ${indexUrl} (source: ${content.source}). Read them in content/ and cite them with type "content".\n` +
+    ok.map((p) => `- ${p.published || '?'} | ${p.title} | ${p.words} words | ${p.file}`).join('\n'));
+}
+
+const run = { page: investigatePage, host: investigateHost, seo: investigateSeo, ads: investigateAds, content: investigateContent }[command];
 if (!run) {
-  console.error(`Unknown command "${command}". Use page, host, seo or ads.`);
+  console.error(`Unknown command "${command}". Use page, host, seo, ads or content.`);
   process.exit(1);
 }
 try {

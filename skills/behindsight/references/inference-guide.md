@@ -40,13 +40,17 @@ Price bands: use only prices you saw. Don't estimate enterprise prices.
 
 | Signal | Supports | Caveat |
 |---|---|---|
-| Active ads in a library | The channel is live right now | Google and Meta mark active ads. LinkedIn's library lists ads from the past year without an active flag, so LinkedIn ads aren't proof of a live campaign |
+| Active ads in a library | The channel is live right now | Google and Meta mark active ads. LinkedIn's library lists ads from the past year; its detail pages give run dates for some ads, so "ran through the capture date" is evidence of a live campaign for those ads only |
 | Many ads first shown in recent months | Active testing or a new campaign push | Count creatives, not budget |
 | Ads with "multiple versions" or many near-identical creatives | Systematic creative testing | |
 | Video share of ads | Format investment | |
 | Ad copy themes (offers, audiences, features) | The messages they pay to put in front of people, often sharper than the website's | Quote the ads; don't summarize a theme from one ad |
+| `utm_campaign` names in LinkedIn ad links (`fall_switch_2026_tofu_emea`) | How the company names and segments its campaigns: theme, season, funnel stage, region | The name is the company's own label; describe it, don't over-read abbreviations |
+| LinkedIn impressions and top countries | Rough reach and geographic focus of those ads | Shown for some ads only; ranges, not exact counts |
 | Tag installed but no ads found in that platform's library | Retargeting audiences only, ads paused, or ads under another account name | Check the brand names searched; mark unknown rather than "not advertising" |
-| Many other advertisers' ads point to the domain | Users link to the product in their own ads (booking links, storefronts) | These are not the company's ads |
+| Many other advertisers' ads point to the domain | Users link to the product in their own ads (booking links, storefronts), or resellers and affiliates promote it | These are not the company's ads. The collector lists them separately |
+
+How an account is matched to the company: its name must match the brand (exactly, or starting with it as whole words, so "Linear Orbit, Inc." counts and "LinearB" doesn't) and it must be tied to the company by evidence: its ads link to the company's domain, or the company's site links to it (Facebook page, LinkedIn company page), or the platform verified it. Each result says why it matched. A status of `uncertain` means accounts named like the brand exist but none could be tied to the company; don't describe their ads as the company's. Name collisions are common for short brand names.
 
 ## Search data (when DataForSEO is enabled)
 

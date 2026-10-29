@@ -6,12 +6,47 @@ import path from 'node:path';
 import { sleep } from './lib.mjs';
 
 const CONTENT_FOLDER = /^\/(?:[a-z]{2}(?:-[a-z]{2,4})?\/)?(blogs?|articles|insights|resources|news|learn|guides|stories|library|academy|magazine|journal)(\/|$)/i;
+// Folders that aren't articles even when their slugs read like sentences.
+const NOT_CONTENT = /^(docs?|help|support|developers?|api|integrations?|apps?|marketplace|templates?|careers|jobs|changelog|releases?|release-notes|legal|customers|case-studies|partners?|products?|features?|solutions?|use-cases|compare|vs|alternatives?|glossary|events?|webinars?|security|status|pricing|terms|privacy|policies|policy|enablement|locations?|tools?|downloads?|shop|collections|products|category|categories|tags?|pages)$/i;
+const LOCALE = /^[a-z]{2}(-[a-z]{2,4})?$/i;
+
+// Article folders in the sitemap: known names (blog, articles…) or any folder whose pages mostly have
+// sentence-like slugs ("how-we-built-x"), which catches blogs under other names, like Linear's /now.
+export function contentFolders(sitemapUrls = []) {
+  const byFolder = new Map();
+  for (const u of sitemapUrls) {
+    let parts;
+    try { parts = new URL(u.loc).pathname.split('/').filter(Boolean); } catch { continue; }
+    if (parts.length > 1 && LOCALE.test(parts[0])) parts.shift();
+    if (parts.length < 2 || LISTING.test('/' + parts.join('/'))) continue;
+    const f = parts[0].toLowerCase();
+    const slug = parts.at(-1);
+    const e = byFolder.get(f) || { folder: f, pages: 0, sentence: 0 };
+    e.pages++;
+    if (slug.split('-').length >= 3 && !/^\d{4}-\d{2}/.test(slug)) e.sentence++;
+    byFolder.set(f, e);
+  }
+  return [...byFolder.values()]
+    .filter((e) => !NOT_CONTENT.test(e.folder) && (CONTENT_FOLDER.test(`/${e.folder}/`) || (e.pages >= 10 && e.sentence / e.pages >= 0.6)))
+    .sort((a, b) => b.pages - a.pages);
+}
+
 const LISTING = /\/(category|categories|tag|tags|topics?|author|authors|page|search|archive)(\/|$)/i;
 const BLOCKED = /error 10\d\d|too many requests|access denied|just a moment|attention required|rate limit/i;
 const FEED_PATHS = ['/blog/feed/', '/feed/', '/blog/rss.xml', '/rss.xml', '/blog/feed.xml', '/feed.xml', '/blog/index.xml', '/atom.xml', '/blogs/news.atom', '/blog/rss/', '/rss/'];
 
-export async function collectContent({ context, origin, siteRoot, homePage, sitemapUrls = [], seoPages = [], recent = 20, topTraffic = 8, log = () => {} }) {
-  const feedCandidates = [...new Set([...(homePage.feeds || []), ...FEED_PATHS.map((p) => origin + p)])];
+export async function collectContent({ context, origin, siteRoot, homePage, sitemapUrls = [], seoPages = [], recent = 20, topTraffic = 8, log = () => {}, indexUrl = null, onlyFolder = null }) {
+  // Which folders hold articles: from the sitemap when it has any, else the known folder names.
+  const folders = contentFolders(sitemapUrls);
+  const folderSet = new Set(onlyFolder ? [onlyFolder.toLowerCase()] : folders.map((f) => f.folder));
+  const isContent = (pathname) => {
+    if (!folderSet.size) return CONTENT_FOLDER.test(pathname);
+    const parts = pathname.split('/').filter(Boolean);
+    if (parts.length > 1 && LOCALE.test(parts[0])) parts.shift();
+    return folderSet.has((parts[0] || '').toLowerCase());
+  };
+  // A chosen folder skips the site-wide feed, which may cover a different section.
+  const feedCandidates = onlyFolder ? [] : [...new Set([...(homePage.feeds || []), ...FEED_PATHS.map((p) => origin + p)])];
   let feed = null;
   for (const url of feedCandidates) {
     const items = await readFeed(context, url);
@@ -22,7 +57,7 @@ export async function collectContent({ context, origin, siteRoot, homePage, site
   // then blog-like sitemap URLs by lastmod (weakest: lastmod often reflects rebuilds).
   let source;
   let candidates;
-  const indexPosts = feed ? [] : await readIndex(context, origin, siteRoot, homePage);
+  const indexPosts = feed ? [] : await readIndex(context, origin, siteRoot, homePage, indexUrl || (folders[0] ? `${origin}/${folders[0].folder}` : null), isContent);
   if (feed) {
     source = 'feed';
     candidates = feed.items.filter((i) => isOwn(i.link, siteRoot)).slice(0, recent).map((i) => ({ url: i.link, feedTitle: i.title, published: i.date, dateSource: 'feed', categories: i.categories, reason: 'recent' }));
@@ -32,21 +67,21 @@ export async function collectContent({ context, origin, siteRoot, homePage, site
     // Index pages often mix in category links; sitemap posts top up the sample if needed.
     const have = new Set(candidates.map((c) => norm(c.url)));
     candidates.push(...sitemapUrls
-      .filter((u) => { try { const p = new URL(u.loc); return CONTENT_FOLDER.test(p.pathname) && !LISTING.test(p.pathname) && p.pathname.split('/').filter(Boolean).length >= 2 && !have.has(norm(u.loc)); } catch { return false; } })
+      .filter((u) => { try { const p = new URL(u.loc); return isContent(p.pathname) && !LISTING.test(p.pathname) && p.pathname.split('/').filter(Boolean).length >= 2 && !have.has(norm(u.loc)); } catch { return false; } })
       .sort((a, b) => String(b.lastmod || '').localeCompare(String(a.lastmod || '')))
       .slice(0, recent)
       .map((u) => ({ url: u.loc, reason: 'recent' })));
   } else {
     source = 'sitemap';
     candidates = sitemapUrls
-      .filter((u) => { try { const p = new URL(u.loc); return CONTENT_FOLDER.test(p.pathname) && !LISTING.test(p.pathname) && p.pathname.split('/').filter(Boolean).length >= 2; } catch { return false; } })
+      .filter((u) => { try { const p = new URL(u.loc); return isContent(p.pathname) && !LISTING.test(p.pathname) && p.pathname.split('/').filter(Boolean).length >= 2; } catch { return false; } })
       .sort((a, b) => String(b.lastmod || '').localeCompare(String(a.lastmod || '')))
       .slice(0, recent * 2)
       .map((u) => ({ url: u.loc, published: u.lastmod?.slice(0, 10) || null, dateSource: 'sitemap lastmod', reason: 'recent' }));
   }
   const seen = new Set(candidates.map((c) => norm(c.url)));
   const traffic = seoPages
-    .filter((p) => { try { return CONTENT_FOLDER.test(new URL(p.url).pathname) && isOwn(p.url, siteRoot); } catch { return false; } })
+    .filter((p) => { try { const path = new URL(p.url).pathname; return isContent(path) && path.split('/').filter(Boolean).length >= 2 && !LISTING.test(path) && isOwn(p.url, siteRoot); } catch { return false; } })
     .sort((a, b) => b.etv - a.etv)
     .slice(0, topTraffic);
   for (const p of traffic) {
@@ -58,7 +93,7 @@ export async function collectContent({ context, origin, siteRoot, homePage, site
   }
   if (!candidates.length) {
     log('no blog or article content found');
-    return { source: 'none', feed: null, posts: [] };
+    return { source: 'none', feed: null, folders, posts: [] };
   }
 
   log(`reading up to ${recent} recent and ${traffic.length} top-traffic posts (${source === 'feed' ? `feed ${feed.url}` : source})`);
@@ -97,7 +132,15 @@ export async function collectContent({ context, origin, siteRoot, homePage, site
     const dates = feed.items.map((i) => i.date).filter(Boolean).sort();
     return { items: feed.items.length, oldest: dates[0] || null, newest: dates.at(-1) || null, categories: Object.entries(cats).sort((a, b) => b[1] - a[1]).slice(0, 20).map(([name, count]) => ({ name, count })) };
   })() : null;
-  return { source, feed: feed ? feed.url : null, feedSummary, posts, listingPagesSkipped: listings };
+  // Section pages share one title ("Now", "Blog"): undated pages with a repeated title are listings too.
+  const undatedTitles = {};
+  for (const p of posts) if (!p.error && !p.published && p.title) undatedTitles[p.title] = (undatedTitles[p.title] || 0) + 1;
+  const kept = posts.filter((p) => {
+    if (p.error || p.published || !p.title || undatedTitles[p.title] < 2) return true;
+    listings.push(p.url);
+    return false;
+  });
+  return { source, feed: feed ? feed.url : null, feedSummary, folders, posts: kept, listingPagesSkipped: listings };
 }
 
 export async function savePosts(content, outDir, slugify) {
@@ -120,10 +163,11 @@ export function cadence(content) {
   return Object.entries(byMonth).sort().map(([month, count]) => ({ month, count }));
 }
 
-async function readIndex(context, origin, siteRoot, homePage) {
+// The blog's index page: a nav link into an article folder, else the biggest article folder, else /blog/.
+async function readIndex(context, origin, siteRoot, homePage, folderIndex, isContent) {
   const fromNav = (homePage.links || []).map((l) => { try { return new URL(l.href); } catch { return null; } })
-    .find((u) => u && u.hostname.endsWith(siteRoot) && CONTENT_FOLDER.test(u.pathname) && u.pathname.split('/').filter(Boolean).length <= 2);
-  const indexUrl = fromNav ? fromNav.origin + fromNav.pathname : `${origin}/blog/`;
+    .find((u) => u && u.hostname.endsWith(siteRoot) && isContent(u.pathname) && u.pathname.split('/').filter(Boolean).length <= 2);
+  const indexUrl = fromNav ? fromNav.origin + fromNav.pathname : folderIndex || `${origin}/blog/`;
   const page = await context.newPage();
   try {
     await page.goto(indexUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });

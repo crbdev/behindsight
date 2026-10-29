@@ -22,7 +22,7 @@ The agent reads all of this, then investigates whatever the first pass missed or
 
 ## Install
 
-Requires Node 20 or later and git.
+Requires Node 20 or later and git. Setup checks your Node version and tells you how to install or update it if needed.
 
 ```sh
 git clone https://github.com/crbdev/behindsight.git
@@ -30,7 +30,7 @@ cd behindsight/skills/behindsight
 sh scripts/setup.sh
 ```
 
-Setup installs Playwright with Chromium (about 100 MB) and clones the Wappalyzer fork into `vendor/`.
+Setup installs Playwright with Chromium (about 600 MB of browser downloads) and fetches the latest Wappalyzer fork into `vendor/`. It test-runs Wappalyzer and falls back to a known-good version if the latest doesn't work. Rerun setup now and then to pick up new detections.
 
 ### Optional: search data
 
@@ -49,7 +49,9 @@ Environment variables work too, and so does `~/.config/dataforseo/.env`, the fil
 
 ### Use it as a skill
 
-To use it as a Claude Code skill, copy or symlink `skills/behindsight` into `~/.claude/skills/`. Then ask: "Do a marketing teardown of example.com."
+To use it as a Claude Code skill, copy or symlink `skills/behindsight` into `~/.claude/skills/` (or a project's `.claude/skills/`). Then ask: "Do a marketing teardown of example.com."
+
+A full run with Claude Opus takes about 25 minutes of agent work and uses roughly 12 million input tokens (almost all cached) and 70,000 output tokens: about $10 at API prices on a linear.app test, plus about $0.09 of DataForSEO if enabled. Sites with more pages to investigate cost more.
 
 ## Run the scripts directly
 
@@ -89,7 +91,8 @@ Behindsight reads what any visitor's browser receives: public pages, public ad l
 ## Limits
 
 - It reads public sources only: the website, the public ad libraries and, with credentials, DataForSEO. Social accounts, job posts and review sites are on the roadmap.
-- Ad libraries show which ads run, not what they cost or who sees them. The ad library sites can change without notice, which may break that step.
+- Ad libraries show which ads run, not what they cost. LinkedIn shows impression ranges and run dates for some ads only. The ad library sites can change without notice, which may break that step.
+- An ad account counts as the company's only when its name matches the brand and its ads link to the company's domain (or the company's site links to it). Short brand names collide often; when no account can be tied to the company, the report says so instead of guessing.
 - An installed pixel shows a channel is set up. It doesn't show how much is spent.
 - Tags and consent rules vary by country. Results reflect where you run it from.
 - Some sites block headless browsers. The collector stops rather than guessing.

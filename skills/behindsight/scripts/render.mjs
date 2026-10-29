@@ -292,7 +292,8 @@ async function embed(file) {
 
 async function adsHtml() {
   if (!adsData) return '';
-  const statusChip = (st) => `<span class="chip ${st === 'found' || st === 'no active ads' ? 'seen' : 'unknown'}">${st === 'found' ? 'ads found' : esc(st)}</span>`;
+  const statusChip = (st) => `<span class="chip ${st === 'found' || st === 'no active ads' ? 'seen' : 'unknown'}">${st === 'found' ? 'ads found' : st === 'uncertain' ? 'account not confirmed' : esc(st)}</span>`;
+  const others = (x) => x.otherAdvertisers?.length && x.otherAdvertisers[0].adsInSample ? `<p class="note">Other advertisers whose ads link to ${esc(collected.domain)} (not counted as the company; often customers, resellers or affiliates): ${x.otherAdvertisers.slice(0, 5).map((o) => esc(o.name)).join(', ')}${x.otherAdvertiserCount > 5 ? ` and ${fmt(x.otherAdvertiserCount - 5)} more` : ''}.</p>` : '';
   const blocks = [];
 
   const g = adsData.google;
@@ -304,9 +305,9 @@ async function adsHtml() {
     const imgs = [];
     for (const smp of g.samples) { const src = await embed(smp.file); if (src) imgs.push(`<figure><a href="${esc(smp.url)}" target="_blank" rel="noopener noreferrer"><img src="${src}" alt="Google ${esc(smp.format)} ad sample" loading="lazy"></a><figcaption>${esc(smp.format)} · last shown ${esc(smp.lastShown || '?')}</figcaption></figure>`); }
     gBody = `<p class="note">Advertiser accounts: ${g.advertisers.map((a) => `${esc(a.name)} (${esc(a.adsTotal || a.adsRange || '?')} ads)`).join('; ')}. ${fmt(g.creativesFetched)} most recent ads read.</p>
-<div class="chips"><span class="stat">Shown in last 30 days <b>${fmt(g.shownInLast30Days)}</b></span>${formats}<span class="stat">Running since <b>${esc(g.firstShown || '?')}</b></span></div>${months}${imgs.length ? `<div class="gallery">${imgs.join('')}</div>` : ''}`;
+<div class="chips"><span class="stat">Shown in last 30 days <b>${fmt(g.shownInLast30Days)}</b></span>${formats}<span class="stat">Running since <b>${esc(g.firstShown || '?')}</b></span></div>${months}${imgs.length ? `<div class="gallery">${imgs.join('')}</div>` : ''}${others(g)}`;
   } else {
-    gBody = `<p class="note">${esc(g.note || g.error || 'Not available.')}${g.domainAdsTotal ? ` Ads from other advertisers that link to ${esc(collected.domain)}: ${esc(g.domainAdsTotal)}.` : ''}</p>`;
+    gBody = `<p class="note">${esc(g.note || g.error || 'Not available.')}</p>`;
   }
   blocks.push(`<div class="adblock"><div class="adhead"><h3>Google</h3>${statusChip(g.status)}</div>${gBody}</div>`);
 
@@ -324,7 +325,7 @@ async function adsHtml() {
       groups.set(k, g);
     }
     const list = [...groups.values()].sort((x, y) => y.count - x.count).slice(0, 8).map((a) => `<li><span class="weak mono">since ${esc(a.started || '?')}${a.video ? ' · video' : ''}${a.count > 1 ? ` · ${a.count} ads` : ''}</span> ${esc(a.text)}${a.headline ? ` <span class="weak">· ${esc(a.headline)}</span>` : ''}${a.cta ? ` <span class="chip src">${esc(a.cta)}</span>` : ''}</li>`).join('');
-    mBody = `<p class="note">Page: ${link(m.url, m.page.name)}${m.page.verified ? ' (verified)' : ' (not verified)'}. The library doesn't show which country each ad runs in.</p>
+    mBody = `<p class="note">Page: ${link(m.url, m.page.name)}${m.page.verified ? ' (verified)' : ' (not verified)'}${m.match ? `, matched because: ${esc(m.match)}` : ''}. The library doesn't show which country each ad runs in.</p>
 <div class="chips"><span class="stat">Active ads in ${esc(adsData.country)} <b>${esc(m.activeAds ?? '?')}</b></span>${m.activeAdsAllCountries ? `<span class="stat">Active worldwide <b>${esc(m.activeAdsAllCountries)}</b></span>` : ''}<span class="stat">Started in last 30 days <b>${fmt(m.startedInLast30Days)}</b> of ${fmt(m.adsRead)} read${m.adsReadFrom ? ` (${esc(m.adsReadFrom)})` : ''}</span><span class="stat">Video <b>${m.videoShare ?? '?'}%</b></span><span class="stat">Oldest still running <b>${esc(m.oldestActiveStart || '?')}</b></span></div>
 <ul class="adlist">${list}</ul>${shot ? `<figure class="wide"><img src="${shot}" alt="Meta Ad Library results" loading="lazy"></figure>` : ''}`;
   } else {
@@ -337,9 +338,11 @@ async function adsHtml() {
   if (l.status === 'found') {
     const shot = await embed(l.screenshot);
     const list = l.ads.slice(0, 8).map((a) => `<li>${a.headline ? `<b>${esc(a.headline)}</b> ` : ''}${esc(a.text)}</li>`).join('');
-    lBody = `<p class="note">Advertiser: ${link(l.searchUrl, l.advertiser)}. LinkedIn's library lists ads from the past year and doesn't mark which are still running.</p>
-<div class="chips"><span class="stat">Ads matching the advertiser${l.scope ? ` (${esc(l.scope)})` : ''} <b>${esc(l.adsMatchingSearch || '?')}</b></span><span class="stat">Read <b>${fmt(l.adsRead)}</b></span></div>
-<ul class="adlist">${list}</ul>${shot ? `<figure class="wide"><img src="${shot}" alt="LinkedIn Ad Library results" loading="lazy"></figure>` : ''}`;
+    const dated = (l.details || []).filter((d) => d.ranFrom);
+    const details = dated.length ? `<table class="compact"><thead><tr><th>Ad</th><th>Ran</th><th>Impressions</th><th>Campaign</th><th>Links to</th></tr></thead><tbody>${dated.map((d) => `<tr><td>${esc(d.headline || d.format || '')}</td><td class="mono">${esc(d.ranFrom)} to ${esc(d.ranTo)}</td><td>${esc(d.impressions || '')}</td><td class="mono">${esc(d.utm?.campaign || '')}</td><td>${d.landingUrl ? link(d.landingUrl, new URL(d.landingUrl).pathname) : ''}</td></tr>`).join('')}</tbody></table>` : '';
+    lBody = `<p class="note">Advertiser: ${link(l.searchUrl, l.advertiser)}${l.paidFor && l.paidFor !== l.advertiser ? `, paid for by ${esc(l.paidFor)}` : ''}${l.match ? `; matched because: ${esc(l.match)}` : ''}. LinkedIn's library lists ads from the past year; run dates and impressions only show for some ads.</p>
+<div class="chips"><span class="stat">Ads in the past year <b>${esc(l.adsMatchingSearch || '?')}</b></span>${l.adsInCountry ? `<span class="stat">Shown in ${esc(adsData.country)} <b>${esc(l.adsInCountry)}</b></span>` : ''}${l.details?.length ? `<span class="stat">Ran through capture date <b>${fmt(l.runningAtCapture)}</b> of ${fmt(l.details.length)} checked</span>` : ''}</div>
+${details}<ul class="adlist">${list}</ul>${shot ? `<figure class="wide"><img src="${shot}" alt="LinkedIn Ad Library results" loading="lazy"></figure>` : ''}`;
   } else {
     lBody = `<p class="note">${esc(l.note || l.error || 'Not available.')}</p>`;
   }

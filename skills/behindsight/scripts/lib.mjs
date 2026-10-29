@@ -221,7 +221,8 @@ export function extractPage() {
     ogTitle: meta('meta[property="og:title"]'),
     ogDescription: meta('meta[property="og:description"]'),
     canonical: document.querySelector('link[rel="canonical"]')?.href || null,
-    h1: [...document.querySelectorAll('h1')].map((h) => clean(h.innerText)).filter(Boolean).slice(0, 5),
+    // Responsive layouts often render a heading twice (one copy per breakpoint): keep one copy.
+    h1: [...document.querySelectorAll('h1')].map((h) => { const t = clean(h.innerText); const half = t.slice(0, (t.length - 1) / 2); return t === `${half} ${half}` ? half : t; }).filter(Boolean).slice(0, 5),
     h2: [...document.querySelectorAll('h2')].map((h) => clean(h.innerText)).filter(Boolean).slice(0, 25),
     ctas: ctas.slice(0, 40),
     forms,
