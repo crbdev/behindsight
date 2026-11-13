@@ -1,0 +1,12 @@
+{
+  "name": "behindsight",
+  "description": "See what's behind any company's website: reverse-engineer its marketing strategy, business model and marketing stack into an evidence-labeled HTML report.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Casey Burridge",
+    "url": "https://caseyrb.com"
+  },
+  "homepage": "https://github.com/crbdev/behindsight",
+  "repository": "https://github.com/crbdev/behindsight",
+  "license": "MIT"
+}
