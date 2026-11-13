@@ -50,7 +50,7 @@
 - `confidence` is required for `inferred` and ignored otherwise.
 - `evidence` is required for `seen` and `inferred`. It's optional for `unknown`, where it can show what you looked at.
 - Evidence `type` is one of:
-  - `page`: page text, a CTA or JSON-LD. `ref` is the page URL.
+  - `page`: page text, a CTA or JSON-LD. `ref` is the page URL. For something only the page's screenshot shows (logos, layout, which button stands out), `ref` is the screenshot's path (`screenshots/home.jpg`) and `detail` describes what the image shows.
   - `network`: a request the browser made. `ref` is the request URL or host.
   - `stack`: a detected technology. `ref` is the technology name and `detail` the ID, if any.
   - `sitemap`: a sitemap pattern or count. `ref` is a path or section name.

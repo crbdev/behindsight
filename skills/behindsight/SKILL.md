@@ -47,6 +47,7 @@ A full run takes about 6 to 8 minutes and a quick run about 3, so run it in the 
 - `--no-seo` skips DataForSEO even when credentials are set.
 - `--seo-location <code>` and `--seo-language <code>` pick the Google market (default `2840` United States, `en`). Use the company's main market.
 - `--quick` skips the content sample, hiring and history (see Quick mode below).
+- `--no-screenshots` skips the screenshot of the top of each page.
 
 The collector stops with exit code 2 when the homepage answers with an error status or a bot-challenge page (bot protection, a geo block). Say so and stop. Don't write a report from guesses. `--force` collects such a page anyway; use it only when the user confirms the page loads normally for them. Other pages that are blocked show as FAILED in the summary and aren't evidence.
 
@@ -55,12 +56,13 @@ The collector stops with exit code 2 when the homepage answers with an error sta
 Read in this order:
 
 1. `summary.md`: the digest. Pages, CTAs, the merged stack, IDs, events, unidentified hosts, sitemap stats, ad library results and, when collected, search data.
-2. `ads/*.jpg`: look at the ad samples and library screenshots. They show messaging the digest can't.
-3. `jobs/*.md`: open marketing, sales and customer roles from the company's job board, when one was found. Read the marketing posts in full: they describe the team's channels, tools, metrics and who the role reports to, which the website never says. Check the role grouping in the summary; fix it in your claims if a role is mislabeled.
-4. The "Changes over time" part of `summary.md`, and `history/*.md` when a change needs a closer look: archived copies of the homepage and pricing page about once a quarter. Use them for how positioning and pricing moved, with dates.
-5. `content/*.md`: the sampled blog and article posts (the newest, plus the top search-traffic posts). Check first that they are posts from the company's main blog: the summary lists the article folders found in the sitemap. If the sample is small, holds non-posts, or comes from the wrong section, resample with `investigate.mjs content` (step 4) before reading. Read the top-traffic posts and at least 5 recent ones in full, and skim the rest. For each, note its topic, format (how-to, listicle, comparison, case study, original research, news or announcement, thought leadership, product update, template or tool), funnel stage (awareness, consideration, decision, retention) and what it asks the reader to do.
-6. `pages/*.md`: full page text. Always read the homepage and pricing pages in full. Skim the rest.
-7. `collected.json`: when you need detail the digest drops (JSON-LD offers, form fields, every CTA).
+2. `screenshots/*.jpg`: the top of each captured page as a visitor saw it. Look at the homepage and the pricing page, and at any other page a claim turns on. They show what the text capture can't: customer logos, which button is styled as the main call to action, imagery and layout.
+3. `ads/*.jpg`: look at the ad samples and library screenshots. They show messaging the digest can't.
+4. `jobs/*.md`: open marketing, sales and customer roles from the company's job board, when one was found. Read the marketing posts in full: they describe the team's channels, tools, metrics and who the role reports to, which the website never says. Check the role grouping in the summary; fix it in your claims if a role is mislabeled.
+5. The "Changes over time" part of `summary.md`, and `history/*.md` when a change needs a closer look: archived copies of the homepage and pricing page about once a quarter. Use them for how positioning and pricing moved, with dates.
+6. `content/*.md`: the sampled blog and article posts (the newest, plus the top search-traffic posts). Check first that they are posts from the company's main blog: the summary lists the article folders found in the sitemap. If the sample is small, holds non-posts, or comes from the wrong section, resample with `investigate.mjs content` (step 4) before reading. Read the top-traffic posts and at least 5 recent ones in full, and skim the rest. For each, note its topic, format (how-to, listicle, comparison, case study, original research, news or announcement, thought leadership, product update, template or tool), funnel stage (awareness, consideration, decision, retention) and what it asks the reader to do.
+7. `pages/*.md`: full page text. Always read the homepage and pricing pages in full. Skim the rest.
+8. `collected.json`: when you need detail the digest drops (JSON-LD offers, form fields, every CTA).
 
 Then read [references/inference-guide.md](references/inference-guide.md). Note what's missing as you read; step 4 is where you fill it. It maps common signals to conclusions and says how far each one can be pushed.
 
@@ -109,6 +111,7 @@ Write `findings.json` in the output folder, following [references/report-schema.
 - When a claim contains a number you calculated, show the calculation in the evidence `detail` ("6,173 blog + 1,224 help of 7,664 URLs"). The checker can match a computed number by coincidence, so the reviewer relies on the working.
 - A tool found only during an investigation isn't in the stack table data; cite it with type `investigation` and the investigation ID.
 - Search numbers are DataForSEO estimates. Use evidence type `seo`, call them estimates in the claim text, and mark conclusions built on them as inferred. Tie them to the content footprint: which sections earn the traffic compared with which sections have the most pages.
+- Something only a page's screenshot shows (a logo wall, which button stands out, a layout) is cited with type `page` and the screenshot's path as `ref` (`screenshots/home.jpg`). Describe what the image shows in `detail`. The script only checks that the image exists, so the reviewer checks it by eye. Text that is on the page is still cited from the page itself.
 - Ad copy you read from a screenshot in `ads/` can't be checked by the script. Cite it with type `ads` and the image path as `ref` (for example `ads/google-3.jpg`), and quote it exactly; the reviewer checks it by eye.
 - Finish with `section_summaries`: an "In short" of one or two sentences for every section in the report, written after the claims and condensing them (see the schema). They're what most readers will read first, so make each one say what the section means, not what it contains.
 - Content strategy: when posts were collected, write a `content_strategy` section and label every sampled post in `content_posts` (see the schema). Answer what they publish, for whom, how often, how posts turn readers into leads or customers, and how what they publish compares with what earns search traffic. Base themes on several posts each, cite the posts with type `content`, and say how many posts were read. If the company publishes little, say that in one claim; don't pad.
@@ -143,7 +146,7 @@ node scripts/render.mjs <output-folder>
 
 The renderer validates `findings.json` and lists every problem if it fails. Fix them and rerun. If it warns that the findings changed after the citation check, run `verify.mjs` again and render again. It writes `report.html`, a single self-contained file. Open it for the user (`open` on macOS, `xdg-open` on Linux) and give them the path.
 
-Reports get shared, so the report leaves out where the capture ran from (the browser's time zone and the regional Google domain it was served). Add `--show-region` when the user wants that in the method section.
+Reports get shared, so the report leaves out where the capture ran from (the browser's time zone and the regional Google domain it was served). Add `--show-region` when the user wants that in the method section. The report opens with the page screenshots; `--no-screenshots` leaves them out, for a user who doesn't want copies of the company's pages in a report they publish.
 
 In your reply, give the two or three most interesting conclusions in plain sentences, plus anything that limited the run (failed pages, a consent wall, a missing sitemap).
 
@@ -152,7 +155,7 @@ In your reply, give the two or three most interesting conclusions in plain sente
 Use it when the user asks for a quick or cheap look, or only wants the stack, the ads and the positioning.
 
 - Collect with `--quick`. There is no content sample, hiring or history to read.
-- Read `summary.md`, the ad samples, and the homepage and pricing pages.
+- Read `summary.md`, the ad samples, and the homepage and pricing pages with their screenshots.
 - Run at most 3 investigations.
 - Write 3 or 4 claims per section, and leave out `content_strategy` and `history`.
 - Keep the citation check and the independent fact-check (steps 6 and 7). They are what make the report worth trusting, so a quick run doesn't skip them.

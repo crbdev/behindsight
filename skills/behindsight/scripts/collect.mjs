@@ -8,7 +8,7 @@
 //        [--max-pages 7] [--wait 6000] [--no-consent] [--no-wappalyzer]
 //        [--no-seo] [--seo-location 2840] [--seo-language en] [--no-ads] [--ads-country US]
 //        [--no-content] [--content-posts 20] [--no-jobs] [--no-history] [--history-years 2]
-//        [--quick] [--force]
+//        [--quick] [--force] [--no-screenshots]
 //
 // --quick skips the content sample, hiring and history, for a shorter and cheaper teardown.
 // --force collects pages that answer with an error status or a bot-challenge page; normally the run
@@ -35,6 +35,7 @@ import { acceptConsent, blockReason, extractEvents, extractPage, hostMatches, is
 const SKILL_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const WAPPALYZER_CLI = path.join(SKILL_DIR, 'vendor/wappalyzer/cli.js');
 const signatures = JSON.parse(await readFile(path.join(SKILL_DIR, 'scripts/signatures.json'), 'utf8'));
+const { version } = JSON.parse(await readFile(path.join(SKILL_DIR, 'package.json'), 'utf8'));
 
 // Wappalyzer categories worth keeping in a marketing report; the rest is
 // infrastructure and goes to the "other technologies" list.
@@ -51,7 +52,7 @@ const MARKETING_CATEGORIES = new Set([
 // ---------- arguments ----------
 
 const args = process.argv.slice(2);
-const opts = { maxPages: 7, wait: 6000, consent: true, wappalyzer: true, content: true, contentPosts: 20, jobs: true, history: true, historyYears: 2, ads: true, adsCountry: 'US', seo: true, seoLocation: 2840, seoLanguage: 'en', pages: [], out: null };
+const opts = { maxPages: 7, wait: 6000, screenshots: true, consent: true, wappalyzer: true, content: true, contentPosts: 20, jobs: true, history: true, historyYears: 2, ads: true, adsCountry: 'US', seo: true, seoLocation: 2840, seoLanguage: 'en', pages: [], out: null };
 let target = null;
 for (let i = 0; i < args.length; i++) {
   const a = args[i];
@@ -73,12 +74,13 @@ for (let i = 0; i < args.length; i++) {
   else if (a === '--seo-language') opts.seoLanguage = args[++i];
   else if (a === '--quick') opts.quick = true;
   else if (a === '--force') opts.force = true;
+  else if (a === '--no-screenshots') opts.screenshots = false;
   else if (!a.startsWith('--')) target = a;
 }
 if (opts.quick) opts.content = opts.jobs = opts.history = false;
 const skipped = (flag) => (opts.quick ? 'skipped in quick mode (--quick)' : `disabled with ${flag}`);
 if (!target) {
-  console.error('Usage: node scripts/collect.mjs <domain-or-url> [--out dir] [--pages url,url] [--max-pages 7] [--wait 6000] [--no-consent] [--no-wappalyzer] [--no-seo] [--seo-location 2840] [--seo-language en] [--no-ads] [--ads-country US] [--no-content] [--content-posts 20] [--no-jobs] [--no-history] [--history-years 2] [--quick] [--force]');
+  console.error('Usage: node scripts/collect.mjs <domain-or-url> [--out dir] [--pages url,url] [--max-pages 7] [--wait 6000] [--no-consent] [--no-wappalyzer] [--no-seo] [--seo-location 2840] [--seo-language en] [--no-ads] [--ads-country US] [--no-content] [--content-posts 20] [--no-jobs] [--no-history] [--history-years 2] [--quick] [--force] [--no-screenshots]');
   process.exit(1);
 }
 
@@ -198,11 +200,21 @@ async function capture(url, kind) {
   // Back to the top so above-the-fold positions are measured like a first visit, sticky headers included.
   await page.evaluate(() => window.scrollTo(0, 0)).catch(() => {});
   await sleep(500);
+  const shot = opts.screenshots ? await screenshotTop(page).catch(() => null) : null;
   const data = await page.evaluate(extractPage).catch((e) => ({ error: e.message }));
   await page.close();
   // Requests were logged against the requested URL; relabel them with the final one after redirects.
   if (data.url && data.url !== url) for (const r of requests) if (r.page === url) r.page = data.url;
-  return { ...data, requestedUrl: url, kind, status, consent };
+  return { ...data, requestedUrl: url, kind, status, consent, shot };
+}
+
+// The top of the page as a visitor sees it, at three-quarter size: readable, and small enough
+// (about 50 KB) to embed in the report.
+async function screenshotTop(page) {
+  const cdp = await context.newCDPSession(page);
+  const { data } = await cdp.send('Page.captureScreenshot', { format: 'jpeg', quality: 70, clip: { x: 0, y: 0, width: 1440, height: 900, scale: 0.75 } });
+  await cdp.detach().catch(() => {});
+  return Buffer.from(data, 'base64');
 }
 
 log(`capturing ${startUrl.href}`);
@@ -561,8 +573,13 @@ for (const p of pages) {
     const md = [`# ${p.title || p.url}`, '', `URL: ${p.url}`, `Kind: ${p.kind}`, '', p.text].join('\n');
     await writeFile(path.join(outDir, 'pages', `${slug}.md`), md);
   }
+  const screenshot = p.shot ? `screenshots/${slug}.jpg` : null;
+  if (screenshot) {
+    await mkdir(path.join(outDir, 'screenshots'), { recursive: true });
+    await writeFile(path.join(outDir, screenshot), p.shot);
+  }
   pageRecords.push({
-    kind: p.kind, url: p.url || p.requestedUrl, status: p.status, error: p.error || null, file: p.text ? `pages/${slug}.md` : null,
+    kind: p.kind, url: p.url || p.requestedUrl, status: p.status, error: p.error || null, file: p.text ? `pages/${slug}.md` : null, screenshot,
     title: p.title, description: p.description, ogTitle: p.ogTitle, ogDescription: p.ogDescription, lang: p.lang,
     h1: p.h1, h2: p.h2, ctas: p.ctas, forms: p.forms, iframes: p.iframes, jsonLd: p.jsonLd
   });
@@ -580,7 +597,7 @@ const captureRegion = { timezone: Intl.DateTimeFormat().resolvedOptions().timeZo
 
 const collected = {
   tool: 'behindsight',
-  version: '0.1.0',
+  version,
   mode: opts.quick ? 'quick' : 'full',
   target: startUrl.href,
   domain: siteHost,
@@ -630,6 +647,7 @@ function buildSummary(c) {
     const offers = JSON.stringify(p.jsonLd || []).match(/"@type":"(Offer|AggregateOffer|Product|SoftwareApplication|Organization)"/g);
     if (offers) L.push(`- JSON-LD types: ${[...new Set(offers)].join(', ')} (see collected.json)`);
     if (p.file) L.push(`- Full text: ${p.file}`);
+    if (p.screenshot) L.push(`- Screenshot of the top of the page: ${p.screenshot}`);
     L.push('');
   }
   L.push('## Marketing stack', '', '| Technology | Category | Seen by | IDs | Pages |', '|---|---|---|---|---|');

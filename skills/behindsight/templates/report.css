@@ -176,3 +176,13 @@ footer { font-size: 0.8rem; color: var(--ink-soft); border-top: 1px solid var(--
 .timeline .when { font-family: var(--font-mono); font-size: 0.8rem; color: var(--ink-soft); padding-top: 2px; }
 #history h4 { margin: 14px 0 4px; font-size: 0.78rem; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-soft); font-weight: 500; }
 @media (max-width: 640px) { .timeline li { grid-template-columns: 1fr; gap: 2px; } }
+
+/* Page screenshots. Clicking one enlarges it: the label toggles a hidden checkbox, so no script is needed. */
+.shots { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; align-items: start; }
+.shots figcaption { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 520px) { .shots { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } }
+.shot label { display: block; cursor: zoom-in; aspect-ratio: 8 / 5; }
+.shot input { position: absolute; opacity: 0; pointer-events: none; }
+.shot input:focus-visible + img { outline: 2px solid var(--accent); outline-offset: 2px; }
+.shot input:checked + img { position: fixed; inset: 0; margin: auto; width: auto; max-width: 96vw; max-height: 94vh; z-index: 20; cursor: zoom-out; box-shadow: 0 0 0 100vmax rgba(10, 12, 18, 0.82); }
+@media print { .shot input:checked + img { position: static; box-shadow: none; max-width: 100%; } }

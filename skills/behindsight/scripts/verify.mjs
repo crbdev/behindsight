@@ -99,6 +99,14 @@ function checkEvidence(e) {
   if (!ref.trim()) return { problems: ['the evidence has no ref, so there is nothing to check it against'], warnings };
   switch (e.type) {
     case 'page': {
+      // Something only a page's screenshot shows (logos, layout, which button stands out): the image
+      // must exist, and what it shows can only be checked by eye.
+      const shot = ref.match(/\bscreenshots\/[\w.-]+\.jpe?g\b/i)?.[0];
+      if (shot) {
+        if (!existsSync(path.join(dir, shot))) problems.push(`screenshot ${shot} doesn't exist`);
+        else warnings.push(`what ${shot} shows can't be checked automatically`);
+        break;
+      }
       const text = pageText.get(normUrl(ref));
       if (!text) { problems.push(`page ${ref} was not captured`); break; }
       for (const q of quotes(detail)) {
