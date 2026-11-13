@@ -3,7 +3,7 @@
 
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { sleep } from './lib.mjs';
+import { blockReason, sleep } from './lib.mjs';
 
 const CONTENT_FOLDER = /^\/(?:[a-z]{2}(?:-[a-z]{2,4})?\/)?(blogs?|articles|insights|resources|news|learn|guides|stories|library|academy|magazine|journal)(\/|$)/i;
 // Folders that aren't articles even when their slugs read like sentences.
@@ -32,12 +32,44 @@ export function contentFolders(sitemapUrls = []) {
 }
 
 const LISTING = /\/(category|categories|tag|tags|topics?|author|authors|page|search|archive)(\/|$)/i;
-const BLOCKED = /error 10\d\d|too many requests|access denied|just a moment|attention required|rate limit/i;
+
+// Category, tag and index pages look like posts by URL, and can carry the date of the newest post
+// they list. What gives them away is that they are mostly links to posts: under 40 words per link,
+// or short and undated. A page with article markup is trusted to be a post.
+export function isListing({ isArticle, words, contentLinks, published }) {
+  if (isArticle || !(contentLinks >= 12)) return false;
+  return words / contentLinks < 40 || (!published && words < 700);
+}
+
+// Ghost, Yoast and WordPress keep tags, categories and authors in their own sitemap files, which says
+// what those URLs are without loading them.
+const LISTING_SITEMAP = /(^|[-_])(tags?|categor(y|ies)|authors?|taxonom(y|ies)|topics?|users)([-_.]|\d|$)/i;
+export function listingUrls(sitemapUrls = []) {
+  const known = new Set();
+  for (const u of sitemapUrls) {
+    const file = String(u.source || '').split(/[?#]/)[0].split('/').pop();
+    if (file && LISTING_SITEMAP.test(file)) known.add(norm(u.loc));
+  }
+  return known;
+}
+
+// On a blog index, a link that carries a heading is a post card; plain links are menus of categories.
+export const postLinksFirst = (links) => [...links.filter((l) => l.card), ...links.filter((l) => !l.card)].map((l) => l.url);
+
+// A post's publish date: article markup first, then a <time> element. A page with many <time>
+// elements is listing other posts, so none of them is its own date.
+export function pickPublished({ ldDate, metaDate, firstTime, timeCount }) {
+  return ldDate || metaDate || (firstTime && timeCount <= 5 ? firstTime : null);
+}
+
+// A rate limit or bot check rather than the post.
+const blocked = (post) => [403, 429, 503].includes(post.status) || (post.status < 400 && !!blockReason(post));
 const FEED_PATHS = ['/blog/feed/', '/feed/', '/blog/rss.xml', '/rss.xml', '/blog/feed.xml', '/feed.xml', '/blog/index.xml', '/atom.xml', '/blogs/news.atom', '/blog/rss/', '/rss/'];
 
 export async function collectContent({ context, origin, siteRoot, homePage, sitemapUrls = [], seoPages = [], recent = 20, topTraffic = 8, log = () => {}, indexUrl = null, onlyFolder = null }) {
   // Which folders hold articles: from the sitemap when it has any, else the known folder names.
   const folders = contentFolders(sitemapUrls);
+  const knownListings = listingUrls(sitemapUrls);
   const folderSet = new Set(onlyFolder ? [onlyFolder.toLowerCase()] : folders.map((f) => f.folder));
   const isContent = (pathname) => {
     if (!folderSet.size) return CONTENT_FOLDER.test(pathname);
@@ -57,7 +89,7 @@ export async function collectContent({ context, origin, siteRoot, homePage, site
   // then blog-like sitemap URLs by lastmod (weakest: lastmod often reflects rebuilds).
   let source;
   let candidates;
-  const indexPosts = feed ? [] : await readIndex(context, origin, siteRoot, homePage, indexUrl || (folders[0] ? `${origin}/${folders[0].folder}` : null), isContent);
+  const indexPosts = feed ? [] : (await readIndex(context, origin, siteRoot, homePage, indexUrl || (folders[0] ? `${origin}/${folders[0].folder}` : null), isContent)).filter((u) => !knownListings.has(norm(u)));
   if (feed) {
     source = 'feed';
     candidates = feed.items.filter((i) => isOwn(i.link, siteRoot)).slice(0, recent).map((i) => ({ url: i.link, feedTitle: i.title, published: i.date, dateSource: 'feed', categories: i.categories, reason: 'recent' }));
@@ -67,21 +99,21 @@ export async function collectContent({ context, origin, siteRoot, homePage, site
     // Index pages often mix in category links; sitemap posts top up the sample if needed.
     const have = new Set(candidates.map((c) => norm(c.url)));
     candidates.push(...sitemapUrls
-      .filter((u) => { try { const p = new URL(u.loc); return isContent(p.pathname) && !LISTING.test(p.pathname) && p.pathname.split('/').filter(Boolean).length >= 2 && !have.has(norm(u.loc)); } catch { return false; } })
+      .filter((u) => { try { const p = new URL(u.loc); return isContent(p.pathname) && !LISTING.test(p.pathname) && p.pathname.split('/').filter(Boolean).length >= 2 && !have.has(norm(u.loc)) && !knownListings.has(norm(u.loc)); } catch { return false; } })
       .sort((a, b) => String(b.lastmod || '').localeCompare(String(a.lastmod || '')))
       .slice(0, recent)
       .map((u) => ({ url: u.loc, reason: 'recent' })));
   } else {
     source = 'sitemap';
     candidates = sitemapUrls
-      .filter((u) => { try { const p = new URL(u.loc); return isContent(p.pathname) && !LISTING.test(p.pathname) && p.pathname.split('/').filter(Boolean).length >= 2; } catch { return false; } })
+      .filter((u) => { try { const p = new URL(u.loc); return isContent(p.pathname) && !LISTING.test(p.pathname) && p.pathname.split('/').filter(Boolean).length >= 2 && !knownListings.has(norm(u.loc)); } catch { return false; } })
       .sort((a, b) => String(b.lastmod || '').localeCompare(String(a.lastmod || '')))
       .slice(0, recent * 2)
       .map((u) => ({ url: u.loc, published: u.lastmod?.slice(0, 10) || null, dateSource: 'sitemap lastmod', reason: 'recent' }));
   }
   const seen = new Set(candidates.map((c) => norm(c.url)));
   const traffic = seoPages
-    .filter((p) => { try { const path = new URL(p.url).pathname; return isContent(path) && path.split('/').filter(Boolean).length >= 2 && !LISTING.test(path) && isOwn(p.url, siteRoot); } catch { return false; } })
+    .filter((p) => { try { const path = new URL(p.url).pathname; return isContent(path) && path.split('/').filter(Boolean).length >= 2 && !LISTING.test(path) && isOwn(p.url, siteRoot) && !knownListings.has(norm(p.url)); } catch { return false; } })
     .sort((a, b) => b.etv - a.etv)
     .slice(0, topTraffic);
   for (const p of traffic) {
@@ -105,18 +137,19 @@ export async function collectContent({ context, origin, siteRoot, homePage, site
   for (const c of candidates) {
     if (c.reason === 'recent' && recentRead >= recent) continue;
     let post;
-    try { post = await readPost(context, c.url); }
+    try { post = await readPost(context, c.url, isContent); }
     catch (e) { posts.push({ ...c, error: e.message.split('\n')[0] }); continue; }
-    if (BLOCKED.test(post.title || '') || (post.status === 429)) {
+    if (blocked(post)) {
       if (backedOff) { posts.push({ ...c, error: 'blocked by the site (rate limit)' }); break; }
       backedOff = true;
       log('content: rate-limited, waiting 30s');
       await sleep(30000);
-      try { post = await readPost(context, c.url); } catch (e) { posts.push({ ...c, error: e.message.split('\n')[0] }); continue; }
-      if (BLOCKED.test(post.title || '')) { posts.push({ ...c, error: 'blocked by the site (rate limit)' }); break; }
+      try { post = await readPost(context, c.url, isContent); } catch (e) { posts.push({ ...c, error: e.message.split('\n')[0] }); continue; }
+      if (blocked(post)) { posts.push({ ...c, error: 'blocked by the site (rate limit)' }); break; }
     }
-    // Category and tag pages look like posts by URL; they're short, undated and mostly links to posts.
-    if (!post.published && post.words < 700 && post.contentLinks >= 12) {
+    // A missing or broken page isn't a post.
+    if (post.status >= 400) { posts.push({ ...c, error: `HTTP ${post.status}` }); await sleep(1500); continue; }
+    if (isListing(post)) {
       listings.push(c.url);
     } else {
       posts.push({ ...c, ...post });
@@ -173,17 +206,19 @@ async function readIndex(context, origin, siteRoot, homePage, folderIndex, isCon
     await page.goto(indexUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
     await sleep(2500);
     const base = new URL(page.url()).pathname.replace(/\/$/, '');
-    const hrefs = await page.evaluate(() => [...document.querySelectorAll('main a[href], article a[href], a[href]')].map((a) => a.href));
+    const hrefs = await page.evaluate(() => [...document.querySelectorAll('a[href]')].map((a) => ({ href: a.href, card: !!a.querySelector('h1, h2, h3, h4') || !!a.closest('h1, h2, h3, h4') })));
     const out = [];
-    for (const h of hrefs) {
+    for (const { href, card } of hrefs) {
       let u;
-      try { u = new URL(h); } catch { continue; }
+      try { u = new URL(href); } catch { continue; }
       const p = u.pathname.replace(/\/$/, '');
       if (!u.hostname.endsWith(siteRoot) || !p.startsWith(base + '/') || LISTING.test(p) || p.split('/').length < base.split('/').length + 1) continue;
       const clean = u.origin + u.pathname;
-      if (!out.includes(clean)) out.push(clean);
+      const seen = out.find((l) => l.url === clean);
+      if (seen) seen.card ||= card;
+      else out.push({ url: clean, card });
     }
-    return out;
+    return postLinksFirst(out);
   } catch {
     return [];
   } finally {
@@ -215,7 +250,7 @@ async function readFeed(context, url) {
   }
 }
 
-async function readPost(context, url) {
+async function readPost(context, url, isContent = (p) => CONTENT_FOLDER.test(p)) {
   const page = await context.newPage();
   await page.route('**/*', (route) => (['image', 'media', 'font'].includes(route.request().resourceType()) ? route.abort() : route.continue()));
   try {
@@ -234,7 +269,11 @@ async function readPost(context, url) {
       const author = article?.author ? [].concat(article.author).map((a) => a?.name || a).filter(Boolean).join(', ') : meta('meta[name="author"]');
       return {
         title: document.querySelector('h1')?.innerText?.trim() || document.title,
-        published: article?.datePublished || meta('meta[property="article:published_time"]') || document.querySelector('time[datetime]')?.getAttribute('datetime') || null,
+        isArticle: !!article || meta('meta[property="og:type"]') === 'article',
+        ldDate: article?.datePublished || null,
+        metaDate: meta('meta[property="article:published_time"]'),
+        firstTime: document.querySelector('time[datetime]')?.getAttribute('datetime') || null,
+        timeCount: document.querySelectorAll('time[datetime]').length,
         modified: article?.dateModified || meta('meta[property="article:modified_time"]') || null,
         author: author ? String(author).slice(0, 80) : null,
         tags: [...document.querySelectorAll('meta[property="article:tag"], meta[property="article:section"]')].map((m) => m.content).concat(article?.keywords ? [].concat(article.keywords).join(',').split(',') : []).map((t) => t.trim()).filter(Boolean).slice(0, 10),
@@ -250,14 +289,16 @@ async function readPost(context, url) {
     await page.close();
     const host = new URL(url).hostname;
     const own = data.links.filter((l) => { try { return new URL(l.href).hostname.endsWith(host.replace(/^www\./, '')); } catch { return false; } });
-    const contentLinks = new Set(own.map((l) => new URL(l.href).pathname).filter((p) => CONTENT_FOLDER.test(p) && p.split('/').filter(Boolean).length >= 2)).size;
+    const contentLinks = new Set(own.map((l) => new URL(l.href).pathname).filter((p) => isContent(p) && p.split('/').filter(Boolean).length >= 2)).size;
     const productLinks = [...new Set(own.map((l) => new URL(l.href).pathname).filter((p) => /\/(pricing|plans|signup|sign-up|register|demo|trial|get-started|start|contact|products?|collections|shop|features|platform|download|app\b)/i.test(p) && !CONTENT_FOLDER.test(p)))].slice(0, 10);
-    const pub = data.published ? new Date(data.published) : null;
+    const published = pickPublished(data);
+    const pub = published ? new Date(published) : null;
     return {
       status: resp?.status() ?? null,
       title: data.title,
       published: pub && !isNaN(pub) ? pub.toISOString().slice(0, 10) : undefined,
       dateSource: pub && !isNaN(pub) ? 'page' : undefined,
+      isArticle: data.isArticle,
       author: data.author,
       tags: data.tags,
       words: data.words,

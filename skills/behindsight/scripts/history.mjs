@@ -92,15 +92,27 @@ async function extract(page, html, matchVendor) {
     const ctas = [...new Set([...document.querySelectorAll('a, button')].map(words).filter((t) => t.length >= 3 && t.length <= 32 && /\b(get|start|try|sign|book|request|contact|buy|join|download|see|watch|talk|schedule|demo|free|create|shop)\b/i.test(t)))].slice(0, 10);
     return { title: clean(document.title), description: clean(document.querySelector('meta[name="description"]')?.content), h1: heads('h1', 3), h2: heads('h2', 8), ctas, text: body };
   }).catch(() => ({ title: '', description: '', h1: [], h2: [], ctas: [], text: '' }));
-  // Cents often sit in their own element ("$19" "99"): join them back into "$19.99".
-  const flat = d.text.replace(/\s+/g, ' ').replace(/([$€£])\s?(\d+) (\d{2})(?= ?(?:USD|EUR|GBP|\/|per\b|mo\b))/gi, '$1$2.$3');
-  const prices = [...new Set((flat.match(/(?:[$€£]\s?\d[\d,.]*|\b\d[\d,.]*\s?(?:USD|EUR|GBP))(?:\s?(?:\/|per)\s?(?:mo|month|yr|year|user|seat|member)\b(?:\s?(?:\/|per)\s?(?:mo|month|yr|year)\b)?)?/gi) || []).map(normPrice))].slice(0, 20);
+  const flat = d.text.replace(/\s+/g, ' ');
+  const prices = extractPrices(d.text);
   const tools = new Set();
   const ids = new Set(html.match(/\bGTM-[A-Z0-9]{4,9}\b/g) || []);
   for (const m of html.matchAll(/(?:https?:)?\/\/([a-z0-9-]+(?:\.[a-z0-9-]+)+)(\/[^"'\s<>)\\]*)?/gi)) {
     try { const v = matchVendor(new URL(`https://${m[1]}${m[2] || '/'}`)); if (v) tools.add(v.name); } catch {}
   }
   return { ...d, prices, tools: [...tools].sort(), tagIds: [...ids], words: flat.split(' ').filter(Boolean).length };
+}
+
+// Prices in a page's text. An amount with a magnitude and no billing period ("$21.5M in revenue",
+// "$3 billion processed") is a company figure, not a price; "$25k/year" is a price.
+export function extractPrices(text) {
+  // Cents often sit in their own element ("$19" "99"): join them back into "$19.99".
+  const flat = String(text || '').replace(/\s+/g, ' ').replace(/([$€£])\s?(\d+) (\d{2})(?= ?(?:USD|EUR|GBP|\/|per\b|mo\b))/gi, '$1$2.$3');
+  const found = [];
+  for (const m of flat.matchAll(/(?:[$€£]\s?\d[\d,.]*|\b\d[\d,.]*\s?(?:USD|EUR|GBP))(\s?(?:[kmb]|bn|mm|million|billion|thousand)\b)?((?:\s?(?:\/|per)\s?(?:mo|month|yr|year|user|seat|member)\b(?:\s?(?:\/|per)\s?(?:mo|month|yr|year)\b)?)?)/gi)) {
+    if (m[1] && !m[2]) continue;
+    found.push(normPrice(m[0]));
+  }
+  return [...new Set(found)].slice(0, 20);
 }
 
 // One spelling per price, so "$ 69 /mo" and "$69/month" don't count as a change.

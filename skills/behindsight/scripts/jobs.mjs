@@ -120,11 +120,13 @@ export function findBoards(blobs) {
 }
 
 // The careers page: a link from the homepage, else a careers URL in the sitemap.
-function careersUrl({ links, sitemapUrls, siteRoot }) {
+export function careersUrl({ links, sitemapUrls, siteRoot }) {
+  // Sitemaps and pages can hold malformed URLs; those are skipped.
+  const pathOf = (u) => { try { return new URL(u).pathname; } catch { return null; } };
   const own = (u) => { try { return registrableDomain(new URL(u).hostname) === siteRoot; } catch { return false; } };
-  const fromLinks = links.find((l) => own(l.href) && (/\/(careers|jobs|join-us|join|work-with-us|hiring|open-roles|open-positions)\/?$/i.test(new URL(l.href).pathname) || /^(careers|jobs|we['’]re hiring|join us|open roles)$/i.test((l.text || '').trim())));
+  const fromLinks = links.find((l) => own(l.href) && (/\/(careers|jobs|join-us|join|work-with-us|hiring|open-roles|open-positions)\/?$/i.test(pathOf(l.href) || '') || /^(careers|jobs|we['’]re hiring|join us|open roles)$/i.test((l.text || '').trim())));
   if (fromLinks) return fromLinks.href;
-  return sitemapUrls.map((u) => u.loc).find((u) => /\/(careers|jobs)\/?$/i.test(new URL(u).pathname)) || null;
+  return sitemapUrls.map((u) => u.loc).find((u) => /\/(careers|jobs)\/?$/i.test(pathOf(u) || '')) || null;
 }
 
 export async function collectJobs({ context, origin, siteRoot, domain, brands, links = [], sitemapUrls = [], outDir, log = () => {}, board: forced = null, slugify }) {

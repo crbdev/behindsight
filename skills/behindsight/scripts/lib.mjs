@@ -1,7 +1,7 @@
 // Shared helpers for the collector and the investigation tools: domain and vendor matching,
 // event extraction, consent handling, in-page extraction and credentials.
 
-import { readFile } from 'node:fs/promises';
+import { mkdir, open, readFile, rename, rmdir, unlink, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
 import path from 'node:path';
@@ -21,6 +21,19 @@ export const hostMatches = (host, h) => h === '*' || host === h || host.endsWith
 export const LANGS = new Set('ar bg cs da de el en es et fi fr he hi hr hu id it ja ko lt lv ms nb nl no pl pt ro ru sk sl sr sv th tr uk vi zh'.split(' '));
 export const isLocale = (seg) => { const m = seg.toLowerCase().match(/^([a-z]{2})([-_][a-z]{2,4})?$/); return !!m && LANGS.has(m[1]); };
 
+// A page that is an error or a bot challenge rather than the site itself. Challenge pages are short,
+// so a long page that only mentions "rate limit" or "access denied" isn't one.
+const CHALLENGE = /just a moment|attention required|access denied|verif(y|ying) (that )?you(['’]re| are) (a )?human|are you a (human|robot)|checking your browser|request (was )?blocked|pardon our interruption|unusual traffic|enable javascript and cookies|error 10\d\d|too many requests|rate limit/i;
+export function blockReason({ status, title, text }) {
+  if (status && status >= 400) return `HTTP ${status}`;
+  const body = String(text || '');
+  if (body.length < 1500 && (CHALLENGE.test(title || '') || CHALLENGE.test(body))) return 'bot-challenge page';
+  return null;
+}
+
+// Event names are usually URL-encoded, but one malformed name shouldn't stop a run.
+const decode = (s) => { try { return decodeURIComponent(s); } catch { return s; } };
+
 // Event names visible in collection requests: GA4, Meta, Pinterest, Reddit, TikTok, Google Ads, Segment.
 export function extractEvents(u, postData) {
   const events = [];
@@ -29,7 +42,7 @@ export function extractEvents(u, postData) {
     if (en) events.push({ platform: 'GA4', name: en });
     for (const line of (postData || '').split('\n')) {
       const m = line.match(/(?:^|&)en=([^&]+)/);
-      if (m) events.push({ platform: 'GA4', name: decodeURIComponent(m[1]) });
+      if (m) events.push({ platform: 'GA4', name: decode(m[1]) });
     }
   }
   if (/facebook\.com$/.test(u.hostname) && /^\/tr/.test(u.pathname)) {
@@ -38,7 +51,7 @@ export function extractEvents(u, postData) {
   }
   if (/facebook\.com$/.test(u.hostname) && /^\/tr/.test(u.pathname) && postData) {
     const ev = postData.match(/(?:^|&)ev=([^&]+)/)?.[1];
-    if (ev) events.push({ platform: 'Meta Pixel', name: decodeURIComponent(ev) });
+    if (ev) events.push({ platform: 'Meta Pixel', name: decode(ev) });
   }
   if (/pinterest\.com$/.test(u.hostname) && /^\/v3/.test(u.pathname)) {
     const ev = u.searchParams.get('event');
@@ -78,6 +91,44 @@ export async function loadEnv(skillDir) {
     }
   }
   return { ...env, ...process.env };
+}
+
+// ---------- investigations saved to a teardown folder ----------
+
+// Several investigations can run at once. Each reserves its ID with an exclusive file, so two runs
+// started together never share one. Call release() once the investigation is saved, or has failed.
+export async function reserveInvestigationId(dir, existing = []) {
+  const invDir = path.join(dir, 'investigations');
+  await mkdir(invDir, { recursive: true });
+  const highest = Math.max(0, ...existing.map((i) => Number(String(i.id).replace(/^inv-/, '')) || 0));
+  for (let n = highest + 1; ; n++) {
+    const marker = path.join(invDir, `.inv-${n}.reserved`);
+    try { await (await open(marker, 'wx')).close(); } catch (e) { if (e.code === 'EEXIST') continue; throw e; }
+    return { id: `inv-${n}`, release: () => unlink(marker).catch(() => {}) };
+  }
+}
+
+// Reads collected.json fresh, applies a change and writes it back, one writer at a time.
+export async function updateCollected(dir, change) {
+  const file = path.join(dir, 'collected.json');
+  const lock = path.join(dir, '.collected.lock');
+  for (let waited = 0; ; waited += 50) {
+    try { await mkdir(lock); break; } catch (e) {
+      if (e.code !== 'EEXIST') throw e;
+      // A lock is held for milliseconds; one still there after 15 seconds was left by a run that died.
+      if (waited >= 15000) { await rmdir(lock).catch(() => {}); waited = 0; }
+      await sleep(50);
+    }
+  }
+  try {
+    const collected = JSON.parse(await readFile(file, 'utf8'));
+    await change(collected);
+    await writeFile(`${file}.tmp`, JSON.stringify(collected, null, 2));
+    await rename(`${file}.tmp`, file);
+    return collected;
+  } finally {
+    await rmdir(lock).catch(() => {});
+  }
 }
 
 // Matchers bound to one site: what counts as first party, which vendor a request belongs to.
