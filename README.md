@@ -10,7 +10,7 @@ See the full [Calendly example report](https://caseyrb.com/behindsight/calendly/
 
 | Source | What you get |
 |---|---|
-| Key pages (home, pricing, product, signup, demo, customers, about) | Headlines, CTAs and where they lead, forms and their fields, JSON-LD offers, full page text |
+| Key pages (home, pricing, product, signup, demo, customers, about) | Headlines, CTAs and where they lead, forms and their fields, JSON-LD offers, full page text, and a screenshot of the top of each page. The report opens with the screenshots, and the agent looks at them for what text misses, like customer logos and which button stands out |
 | Network grab | Every pixel, tag and script the browser loads, before and after accepting cookies. Public account IDs (GTM containers, GA4 properties, Google Ads, Meta, LinkedIn, TikTok and more), tracking events like `sign_up` or `Lead`, and first-party or server-side tagging |
 | [Wappalyzer](https://github.com/HTTPArchive/wappalyzer) | Technology detection from page code, using HTTP Archive's open-source fork. Detections confirmed by the network grab are marked as such. |
 | Sitemap | Content sections and their size, comparison, integration and template pages, locales, and update dates by month |
@@ -76,7 +76,7 @@ node scripts/collect.mjs example.com --seo-location 2826   # UK search data
 node scripts/investigate.mjs page teardowns/example.com-<date> https://example.com/pricing --click "Monthly"   # follow-up evidence
 node scripts/verify.mjs teardowns/example.com-<date>   # citation check
 # independent review: references/review-prompt.md
-node scripts/render.mjs teardowns/example.com-<date>   # add --show-region to say where the capture ran from
+node scripts/render.mjs teardowns/example.com-<date>   # --show-region adds where the capture ran from; --no-screenshots leaves the page screenshots out
 ```
 
 ## Accuracy
@@ -104,6 +104,7 @@ Behindsight reads what any visitor's browser receives: public pages, public ad l
 - The ad library step reads the libraries' public websites, not official APIs. Google, Meta and LinkedIn each have terms on automated access. You're responsible for using Behindsight in line with them, and with the terms of the sites you analyze. Skip ad libraries with `--no-ads`.
 - It browses like a visitor, with a regular Chrome user agent, and reads `robots.txt` only to find the sitemap. It doesn't check `Disallow` rules, so check them yourself for sites where that matters to you.
 - Keep volumes low. A full run loads about 7 pages, 20 to 30 blog posts, a careers page and the sitemap files from the site, plus a handful of ad library, job board and Wayback Machine requests. `--quick` skips the blog posts and the careers page. Don't point it at many sites in a loop.
+- Reports include screenshots of the top of each captured page. If you'd rather not publish copies of a company's pages, pass `--no-screenshots` to `collect.mjs` or `render.mjs`.
 - Reports get shared, so they leave out where the capture ran from. `render.mjs --show-region` adds the browser's time zone and the regional Google domain to the method section.
 - Reports describe what a company's public website and ads show. Inferences are labeled as such and can be wrong, so treat them as a starting point, not as fact about the company.
 

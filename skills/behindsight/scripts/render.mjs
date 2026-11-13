@@ -2,8 +2,9 @@
 // Renders <dir>/findings.json (written by the agent) plus <dir>/collected.json
 // (written by collect.mjs) into a single self-contained <dir>/report.html.
 //
-// Usage: node scripts/render.mjs <teardown-dir> [--show-region]
+// Usage: node scripts/render.mjs <teardown-dir> [--show-region] [--no-screenshots]
 //
+// --no-screenshots leaves the page screenshots out of the report.
 // --show-region adds where the capture ran from (browser time zone, regional Google domain) to the
 // method section. It is left out by default because reports get shared.
 
@@ -16,8 +17,9 @@ import { fileURLToPath } from 'node:url';
 const SKILL_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dir = process.argv.slice(2).find((a) => !a.startsWith('--'));
 const showRegion = process.argv.includes('--show-region');
+const showScreenshots = !process.argv.includes('--no-screenshots');
 if (!dir) {
-  console.error('Usage: node scripts/render.mjs <teardown-dir> [--show-region]');
+  console.error('Usage: node scripts/render.mjs <teardown-dir> [--show-region] [--no-screenshots]');
   process.exit(1);
 }
 
@@ -425,6 +427,30 @@ function historyHtml() {
 <p class="note">From archived copies of the homepage and pricing page, about one per quarter, read as HTML without running scripts. Dates are when a copy was archived, so a change happened somewhere between two dates. Pages built by JavaScript can archive with little text. Tools are only those written into the page HTML; tags loaded by a tag manager don't show.</p></section>`;
 }
 
+// ---------- pages captured (screenshots) ----------
+
+// The top of each captured page, homepage first and largest. Each image is embedded once and
+// enlarges on click without any script (a hidden checkbox; see report.css).
+async function pagesHtml() {
+  if (!showScreenshots) return '';
+  const shots = [];
+  for (const p of collected.pages) {
+    const src = p.screenshot ? await embed(p.screenshot) : null;
+    if (src) shots.push({ ...p, src });
+  }
+  if (!shots.length) return '';
+  const label = (p) => {
+    if (p.kind === 'home') return 'Homepage';
+    const name = /^page-\d+$/.test(p.kind) ? path_(p.url) : p.kind.replace(/^nav: /, '').replace(/-/g, ' ');
+    return name.charAt(0).toUpperCase() + name.slice(1);
+  };
+  const figure = (p, cls = '') => `<figure class="shot${cls}"><label title="Click to enlarge"><input type="checkbox" aria-label="Enlarge the ${esc(label(p))} screenshot"><img src="${p.src}" alt="Top of the ${esc(label(p).toLowerCase())} page (${esc(shortUrl(p.url))})" loading="lazy"></label><figcaption>${esc(label(p))} · ${link(p.url)}</figcaption></figure>`;
+  const home = shots.find((p) => p.kind === 'home');
+  const rest = shots.filter((p) => p !== home);
+  return `<section id="pages"><div class="section-head"><h2>Pages captured</h2><span class="count">${shots.length} screenshot${shots.length === 1 ? '' : 's'}</span></div>
+<p class="lede">The top of each page as a desktop visitor saw it on ${esc(collected.capturedAt.slice(0, 10))}. Click a screenshot to enlarge it.</p>${home ? figure(home, ' lead') : ''}${rest.length ? `<div class="shots">${rest.map((p) => figure(p)).join('')}</div>` : ''}</section>`;
+}
+
 // ---------- remaining sections ----------
 
 function methodHtml() {
@@ -466,7 +492,9 @@ function checksHtml() {
 
 // ---------- page ----------
 
+const pagesSection = await pagesHtml();
 const nav = [
+  ...(pagesSection ? [['pages', 'Pages captured']] : []),
   ...SECTIONS.filter((s) => findings.sections[s.key] && !s.inData).map((s) => [s.id, s.title]),
   ['stack', 'Marketing stack'],
   ...(adsData ? [['ads', 'Advertising']] : []),
@@ -507,7 +535,7 @@ ${css}
 <div class="legend"><span>${chip('seen')} observed directly on the site</span><span>${chip('inferred')} a conclusion drawn from evidence</span><span>${chip('unknown')} the evidence doesn't say</span></div>
 <dl class="glance">${glance}</dl>
 </header>
-${SECTIONS.map(sectionHtml).join('\n')}
+${pagesSection}${SECTIONS.map(sectionHtml).join('\n')}
 ${stackHtml()}
 ${await adsHtml()}
 ${contentHtml()}

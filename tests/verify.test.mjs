@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -32,8 +32,9 @@ const collected = {
   }
 };
 
-async function runVerify(claims) {
+async function runVerify(claims, files = []) {
   const dir = await mkdtemp(path.join(tmpdir(), 'behindsight-verify-'));
+  for (const file of files) { await mkdir(path.dirname(path.join(dir, file)), { recursive: true }); await writeFile(path.join(dir, file), 'x'); }
   const findings = JSON.stringify({ company: 'Acme', summary: 'x', at_a_glance: [], sections: { acquisition: claims } });
   await writeFile(path.join(dir, 'collected.json'), JSON.stringify(collected));
   await writeFile(path.join(dir, 'findings.json'), findings);
@@ -96,4 +97,15 @@ test('an overall search figure passes with a generic reference', async () => {
 test('the check records which version of the findings it ran on', async () => {
   const { report, findings } = await runVerify([claim('stack', 'React')]);
   assert.equal(report.summary.findingsHash, createHash('sha1').update(findings).digest('hex'));
+});
+
+test('a claim about something only a screenshot shows can cite the screenshot, and is flagged for a check by eye', async () => {
+  const { results } = await runVerify([claim('page', 'screenshots/home.jpg', 'The logo wall reads "Dropbox, Lyft and Zendesk"')], ['screenshots/home.jpg']);
+  assert.deepEqual(results[0].problems, []);
+  assert.match(results[0].warnings.join(' '), /screenshots\/home\.jpg/);
+});
+
+test('citing a screenshot that was not taken is a problem', async () => {
+  const { results } = await runVerify([claim('page', 'screenshots/pricing.jpg', 'Three plan cards')]);
+  assert.match(results[0].problems.join(' '), /screenshots\/pricing\.jpg/);
 });

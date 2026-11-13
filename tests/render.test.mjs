@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { cp, mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -13,9 +13,12 @@ const RENDER = path.join(ROOT, 'skills/behindsight/scripts/render.mjs');
 const EXAMPLE = path.join(ROOT, 'examples/calendly.com');
 
 // A copy of the example, optionally with changed collected.json or verify.json, rendered.
-async function render({ collected, verify, args = [] } = {}) {
+async function render({ collected, verify, screenshots = [], args = [] } = {}) {
   const dir = await mkdtemp(path.join(tmpdir(), 'behindsight-render-'));
   await cp(EXAMPLE, dir, { recursive: true });
+  // Any JPEG will do for a screenshot file; the example's ad screenshot is one.
+  await mkdir(path.join(dir, 'screenshots'), { recursive: true });
+  for (const name of screenshots) await cp(path.join(EXAMPLE, 'ads/meta.jpg'), path.join(dir, 'screenshots', name));
   const edit = async (file, change) => {
     const data = JSON.parse(await readFile(path.join(dir, file), 'utf8'));
     await writeFile(path.join(dir, file), JSON.stringify(change(data) || data, null, 2));
@@ -69,4 +72,33 @@ test('layers skipped in a quick run are listed in the method section', async () 
   assert.match(method, /content sample/);
   assert.match(method, /hiring/);
   assert.match(method, /changes over time/);
+});
+
+// The first two pages of the example are its homepage and pricing page.
+const withScreenshots = (c) => { c.pages[0].screenshot = 'screenshots/home.jpg'; c.pages[1].screenshot = 'screenshots/pricing.jpg'; };
+const pagesSection = (html) => { const start = html.indexOf('<section id="pages">'); return start < 0 ? null : html.slice(start, html.indexOf('</section>', start)); };
+
+test('page screenshots are embedded in their own section, homepage first, and listed in the contents', async () => {
+  const { html } = await render({ collected: withScreenshots, screenshots: ['home.jpg', 'pricing.jpg'] });
+  const section = pagesSection(html);
+  assert.equal((section.match(/<img src="data:image\/jpeg;base64,/g) || []).length, 2);
+  assert.ok(section.indexOf('Homepage') < section.indexOf('Pricing'), 'the homepage comes first');
+  assert.match(section, /alt="[^"]*homepage[^"]*"/i);
+  assert.match(html, /<a href="#pages">/);
+});
+
+test('a screenshot whose file is missing is left out instead of showing a broken image', async () => {
+  const { html } = await render({ collected: withScreenshots, screenshots: ['home.jpg'] });
+  assert.equal((pagesSection(html).match(/<img /g) || []).length, 1);
+});
+
+test('a report with no screenshots has no pages section', async () => {
+  const { html } = await render({ collected: withScreenshots });
+  assert.equal(pagesSection(html), null);
+  assert.doesNotMatch(html, /href="#pages"/);
+});
+
+test('--no-screenshots leaves captured screenshots out of the report', async () => {
+  const { html } = await render({ collected: withScreenshots, screenshots: ['home.jpg', 'pricing.jpg'], args: ['--no-screenshots'] });
+  assert.equal(pagesSection(html), null);
 });

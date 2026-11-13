@@ -36,6 +36,16 @@ async function site(routes) {
   await new Promise((resolve) => server.listen(0, resolve));
   return { origin: `http://localhost:${server.address().port}`, hits, close: () => new Promise((resolve) => server.close(resolve)) };
 }
+// Width and height of a JPEG, read from its frame header.
+function jpegSize(buf) {
+  for (let i = 2; i < buf.length;) {
+    const marker = buf[i + 1];
+    if (marker >= 0xc0 && marker <= 0xc3) return { width: buf.readUInt16BE(i + 7), height: buf.readUInt16BE(i + 5) };
+    i += 2 + buf.readUInt16BE(i + 2);
+  }
+  return null;
+}
+
 const collect = async (origin, extra = []) => {
   const out = path.join(await mkdtemp(path.join(tmpdir(), 'behindsight-collect-')), 'out');
   const result = await run(script('collect.mjs'), [origin, '--out', out, '--no-wappalyzer', '--no-ads', '--no-seo', '--no-jobs', '--no-history', '--no-content', '--wait', '200', ...extra]);
@@ -75,7 +85,34 @@ test('a blocked inner page is recorded as failed, not as evidence', browser, asy
   const pricing = r.collected.pages.find((p) => p.kind === 'pricing');
   assert.match(pricing.error, /HTTP 403/);
   assert.equal(pricing.file, null);
+  assert.equal(pricing.screenshot, null);
   assert.match(await readFile(path.join(r.out, 'summary.md'), 'utf8'), /pricing: .*FAILED/);
+});
+
+test('each captured page gets a screenshot of the top of the page', browser, async () => {
+  const s = await site({ '/': () => [200, 'text/html', page()], '/pricing': () => [200, 'text/html', page('<p>Pro $12/mo</p>')] });
+  const r = await collect(s.origin);
+  await s.close();
+  assert.deepEqual(r.collected.pages.map((p) => p.screenshot), ['screenshots/home.jpg', 'screenshots/pricing.jpg']);
+  const shot = await readFile(path.join(r.out, 'screenshots/home.jpg'));
+  assert.deepEqual([shot[0], shot[1]], [0xff, 0xd8], 'a JPEG file');
+  assert.deepEqual(jpegSize(shot), { width: 1080, height: 675 });
+  assert.match(await readFile(path.join(r.out, 'summary.md'), 'utf8'), /screenshots\/home\.jpg/);
+});
+
+test('--no-screenshots takes none', browser, async () => {
+  const s = await site({ '/': () => [200, 'text/html', page()], '/pricing': () => [200, 'text/html', page()] });
+  const r = await collect(s.origin, ['--no-screenshots']);
+  await s.close();
+  assert.deepEqual(r.collected.pages.map((p) => p.screenshot), [null, null]);
+  assert.equal(existsSync(path.join(r.out, 'screenshots')), false);
+});
+
+test('the evidence records the version of the skill that collected it', browser, async () => {
+  const s = await site({ '/': () => [200, 'text/html', page()], '/pricing': () => [200, 'text/html', page()] });
+  const r = await collect(s.origin, ['--no-screenshots']);
+  await s.close();
+  assert.equal(r.collected.version, JSON.parse(await readFile(path.join(SKILL, 'package.json'), 'utf8')).version);
 });
 
 test('a sitemap index whose files all fail is given up on quickly', browser, async () => {
