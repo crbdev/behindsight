@@ -5,6 +5,7 @@
 // Usage: node scripts/verify.mjs <teardown-dir>
 
 import { readFile, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
@@ -15,7 +16,8 @@ if (!dir) {
 }
 
 const collected = JSON.parse(await readFile(path.join(dir, 'collected.json'), 'utf8'));
-const findings = JSON.parse(await readFile(path.join(dir, 'findings.json'), 'utf8'));
+const findingsText = await readFile(path.join(dir, 'findings.json'), 'utf8');
+const findings = JSON.parse(findingsText);
 const network = existsSync(path.join(dir, 'network.json')) ? JSON.parse(await readFile(path.join(dir, 'network.json'), 'utf8')) : [];
 
 const norm = (s) => String(s ?? '').toLowerCase().replace(/[‘’`]/g, "'").replace(/[“”]/g, '"').replace(/[–—]/g, '-').replace(/\s+/g, ' ').trim();
@@ -74,8 +76,18 @@ function quotes(detail) {
   return out;
 }
 
-const stackNames = [...collected.stack, ...(collected.otherTechnologies || [])].map((s) => norm(s.name));
-const agentVendors = (findings.host_notes || []).map((n) => norm(n.vendor));
+// Technology names a claim can cite: the detected stack (under either source's name), tools first
+// seen during an investigation, and hosts the analyst identified. A reference matches on the whole
+// name, or when one holds the other as whole words ("Google Ads conversion tag" names Google Ads).
+// Matching on any shared letters would let "Reactor Pixel" pass because React was detected.
+const words = (s) => norm(s).replace(/[^a-z0-9]+/g, ' ').trim();
+const knownTech = [
+  ...[...collected.stack, ...(collected.otherTechnologies || [])].flatMap((s) => [s.name, s.wappalyzerName]),
+  ...(collected.investigations || []).flatMap((i) => (i.vendors || []).map((v) => v.name)),
+  ...(findings.host_notes || []).map((n) => n.vendor)
+].filter(Boolean).map(words);
+const holds = (text, phrase) => phrase.length >= 4 && ` ${text} `.includes(` ${phrase} `);
+const isKnownTech = (ref) => { const r = words(ref); return !!r && knownTech.some((t) => t === r || holds(r, t) || holds(t, r)); };
 const allIds = collected.stack.flatMap((s) => (s.ids || []).map((i) => i.value));
 const seo = collected.seo && !collected.seo.skipped ? collected.seo : null;
 
@@ -84,6 +96,7 @@ function checkEvidence(e) {
   const warnings = [];
   const ref = String(e.ref || '');
   const detail = String(e.detail || '');
+  if (!ref.trim()) return { problems: ['the evidence has no ref, so there is nothing to check it against'], warnings };
   switch (e.type) {
     case 'page': {
       const text = pageText.get(normUrl(ref));
@@ -108,8 +121,7 @@ function checkEvidence(e) {
       break;
     }
     case 'stack': {
-      const name = norm(ref);
-      if (!stackNames.some((s) => s === name || s.includes(name) || name.includes(s)) && !agentVendors.includes(name)) problems.push(`technology "${ref}" is not in the detected stack`);
+      if (!isKnownTech(ref)) problems.push(`technology "${ref}" is not in the detected stack`);
       for (const id of detail.match(/\b(?:GTM|G|AW|DC|GT)-[A-Z0-9]+\b|\b\d{3}-[A-Z]{3}-\d{3}\b/g) || []) {
         if (!allIds.includes(id) && !network.some((r) => r.url.includes(id.replace(/^AW-/, '')))) problems.push(`ID ${id} was not seen`);
       }
@@ -131,14 +143,22 @@ function checkEvidence(e) {
     case 'seo': {
       if (!seo) { problems.push('cites search data, but none was collected'); break; }
       const r = norm(ref);
-      const known = r.includes('overview') || r.includes('section') || r.includes('competitor') || r.includes('top 100') || r.includes('keywords') ||
-        seo.keywords.some((k) => norm(k.keyword) === r) ||
-        seo.pages.some((p) => normUrl(p.url) === normUrl(ref)) ||
-        seo.competitors.some((c) => norm(c.domain) === r);
+      // The keyword, page or competitor the citation names, when it names one.
+      const item = seo.keywords.find((k) => norm(k.keyword) === r) ||
+        seo.pages.find((p) => normUrl(p.url) && normUrl(p.url) === normUrl(ref)) ||
+        seo.competitors.find((c) => norm(c.domain) === r);
+      const known = item || r.includes('overview') || r.includes('section') || r.includes('competitor') || r.includes('top 100') || r.includes('keywords');
       if (!known) problems.push(`search item "${ref}" is not in the search data`);
-      const { hard, soft } = splitPercent(unmatchedNumbers(detail, seo), detail);
+      // The keyword and page tables hold thousands of numbers, so almost any figure matches one of
+      // them by chance. Numbers are checked against the cited item, or the totals when the citation
+      // is general; a number found only elsewhere in the tables is flagged for a closer look.
+      const { keywords, pages, ...totals } = seo;
+      const anywhere = unmatchedNumbers(detail, seo);
+      const elsewhere = unmatchedNumbers(detail, item || totals).filter((n) => !anywhere.includes(n));
+      const { hard, soft } = splitPercent(anywhere, detail);
       if (hard.length) problems.push(`search numbers don't match: ${hard.join(', ')}`);
       if (soft.length) warnings.push(`percentages not in the data (may be computed): ${soft.join(', ')}`);
+      if (elsewhere.length) warnings.push(item ? `numbers that aren't on the cited item, though they appear elsewhere in the search data: ${elsewhere.join(', ')}` : `numbers that match only a single keyword or page row; cite that keyword or page as the ref so they can be checked: ${elsewhere.join(', ')}`);
       break;
     }
     case 'ads': {
@@ -278,6 +298,8 @@ for (const [key, text] of Object.entries(findings.section_summaries || {})) {
 
 const summary = {
   checkedAt: new Date().toISOString(),
+  // Which version of the findings was checked, so the renderer can tell when they changed afterwards.
+  findingsHash: createHash('sha1').update(findingsText).digest('hex'),
   claims: results.length,
   citations: results.reduce((n, r) => n + (findings.sections[r.section]?.[r.index]?.evidence || []).length, 0),
   problems: problemCount,

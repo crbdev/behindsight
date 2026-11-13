@@ -4,6 +4,16 @@
 // thin to report.
 // All numbers are DataForSEO's modeled estimates.
 
+import { registrableDomain } from './lib.mjs';
+
+// The company's own sites: its domain and subdomains, and the same name under another ending (acme.co.uk).
+// A domain that only contains the brand (dropbox.com for box.com) is someone else.
+export function isOwnDomain(candidate, domain) {
+  const own = registrableDomain(domain);
+  const other = registrableDomain(String(candidate).toLowerCase().replace(/^www\./, ''));
+  return other === own || other.split('.')[0] === own.split('.')[0];
+}
+
 // Platforms that share keywords with almost every site; they aren't useful competitors.
 const PLATFORMS = /(^|\.)(youtube|facebook|reddit|instagram|apple|google|wikipedia|amazon|linkedin|microsoft|quora|pinterest|x|twitter|tiktok|medium|github|yahoo|bing|wikihow|forbes|nytimes)\.[a-z.]+$/;
 
@@ -131,7 +141,7 @@ export async function collectSerpCompetitors({ client, seo, domain, limit = 15 }
     item_types: ['organic'], limit: limit * 2 + 5, order_by: ['visibility,desc']
   });
   seo.competitors = (res?.items || [])
-    .filter((c) => c.domain && !c.domain.replace(/^www\./, '').endsWith(domain) && !c.domain.includes(domain.split('.')[0]) && !PLATFORMS.test(c.domain) && (c.keywords_count ?? 0) >= 2)
+    .filter((c) => c.domain && !isOwnDomain(c.domain, domain) && !PLATFORMS.test(c.domain) && (c.keywords_count ?? 0) >= 2)
     .sort((a, b) => (b.keywords_count ?? 0) - (a.keywords_count ?? 0) || (b.visibility ?? 0) - (a.visibility ?? 0))
     .slice(0, limit)
     .map((c) => ({

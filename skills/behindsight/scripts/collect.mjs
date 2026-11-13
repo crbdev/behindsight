@@ -8,11 +8,15 @@
 //        [--max-pages 7] [--wait 6000] [--no-consent] [--no-wappalyzer]
 //        [--no-seo] [--seo-location 2840] [--seo-language en] [--no-ads] [--ads-country US]
 //        [--no-content] [--content-posts 20] [--no-jobs] [--no-history] [--history-years 2]
+//        [--quick] [--force]
+//
+// --quick skips the content sample, hiring and history, for a shorter and cheaper teardown.
+// --force collects pages that answer with an error status or a bot-challenge page; normally the run
+// stops when the homepage is one, because a report about a block page is worse than no report.
 //
 // Search data is added when DATAFORSEO_LOGIN and DATAFORSEO_PASSWORD are set in the
 // environment, the skill's .env file or ~/.config/dataforseo/.env.
 
-import { chromium } from 'playwright';
 import { execFile } from 'node:child_process';
 import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
@@ -25,7 +29,8 @@ import { brandCandidates, collectAds } from './ads.mjs';
 import { collectJobs } from './jobs.mjs';
 import { collectHistory } from './history.mjs';
 import { cadence, collectContent, savePosts } from './content.mjs';
-import { acceptConsent, extractEvents, extractPage, hostMatches, isLocale, loadEnv, registrableDomain, siteHelpers, sleep } from './lib.mjs';
+import { chromium, launchBrowser } from './browser.mjs';
+import { acceptConsent, blockReason, extractEvents, extractPage, hostMatches, isLocale, loadEnv, registrableDomain, siteHelpers, sleep } from './lib.mjs';
 
 const SKILL_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const WAPPALYZER_CLI = path.join(SKILL_DIR, 'vendor/wappalyzer/cli.js');
@@ -66,10 +71,14 @@ for (let i = 0; i < args.length; i++) {
   else if (a === '--ads-country') opts.adsCountry = args[++i].toUpperCase();
   else if (a === '--seo-location') opts.seoLocation = Number(args[++i]);
   else if (a === '--seo-language') opts.seoLanguage = args[++i];
+  else if (a === '--quick') opts.quick = true;
+  else if (a === '--force') opts.force = true;
   else if (!a.startsWith('--')) target = a;
 }
+if (opts.quick) opts.content = opts.jobs = opts.history = false;
+const skipped = (flag) => (opts.quick ? 'skipped in quick mode (--quick)' : `disabled with ${flag}`);
 if (!target) {
-  console.error('Usage: node scripts/collect.mjs <domain-or-url> [--out dir] [--pages url,url] [--max-pages 7] [--wait 6000] [--no-consent] [--no-wappalyzer] [--no-seo] [--seo-location 2840] [--seo-language en] [--no-ads] [--ads-country US] [--no-content] [--content-posts 20] [--no-jobs] [--no-history] [--history-years 2]');
+  console.error('Usage: node scripts/collect.mjs <domain-or-url> [--out dir] [--pages url,url] [--max-pages 7] [--wait 6000] [--no-consent] [--no-wappalyzer] [--no-seo] [--seo-location 2840] [--seo-language en] [--no-ads] [--ads-country US] [--no-content] [--content-posts 20] [--no-jobs] [--no-history] [--history-years 2] [--quick] [--force]');
   process.exit(1);
 }
 
@@ -78,7 +87,6 @@ const siteHost = startUrl.hostname.replace(/^www\./, '');
 const siteRoot = registrableDomain(startUrl.hostname);
 const today = new Date().toISOString().slice(0, 10);
 const outDir = path.resolve(opts.out || path.join(process.cwd(), 'teardowns', `${siteHost}-${today}`));
-await mkdir(path.join(outDir, 'pages'), { recursive: true });
 
 const log = (...m) => console.error('[collect]', ...m);
 
@@ -126,18 +134,7 @@ function discoverPages(home) {
 
 // ---------- browser capture ----------
 
-// Search data runs alongside the browser capture.
-const seoCreds = seoCredentials(env);
-let seoClient = null;
-const seoJob = !opts.seo
-  ? Promise.resolve({ skipped: 'disabled with --no-seo' })
-  : !seoCreds
-    ? Promise.resolve({ skipped: 'no DataForSEO credentials' })
-    : collectSeo({ client: (seoClient = createClient({ credentials: seoCreds, baseUrl: env.DATAFORSEO_BASE_URL })), domain: siteHost, locationCode: opts.seoLocation, languageCode: opts.seoLanguage })
-      .catch((e) => ({ skipped: `failed: ${e.message}` }));
-if (seoCreds && opts.seo) log(`fetching search data from DataForSEO (location ${opts.seoLocation})`);
-
-const browser = await chromium.launch({ headless: true });
+const browser = await launchBrowser({ headless: true });
 const major = browser.version().split('.')[0];
 const userAgent = `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${major}.0.0.0 Safari/537.36`;
 const context = await browser.newContext({ userAgent, viewport: { width: 1440, height: 900 }, locale: 'en-US' });
@@ -158,9 +155,11 @@ async function capture(url, kind) {
     });
   });
   let status = null;
+  // The status of the last document the page settled on: a bot check can answer 403 first and then let the real page through.
+  page.on('response', (r) => { if (r.request().isNavigationRequest() && r.frame() === page.mainFrame() && (r.status() < 300 || r.status() >= 400)) status = r.status(); });
   try {
     const resp = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 });
-    status = resp?.status() ?? null;
+    status ??= resp?.status() ?? null;
     await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {});
     // Scroll to trigger lazy-loaded tags and widgets.
     for (let y = 0; y < 6; y++) {
@@ -172,6 +171,17 @@ async function capture(url, kind) {
     log(`failed to load ${url}: ${e.message}`);
     await page.close();
     return { url, kind, status, error: e.message };
+  }
+  // An error status or a bot-challenge page isn't the site, and must not be read as evidence about it.
+  if (!opts.force) {
+    const probe = await page.evaluate(() => ({ title: document.title, text: (document.body?.innerText || '').slice(0, 3000) })).catch(() => ({}));
+    const blocked = blockReason({ status, ...probe });
+    if (blocked) {
+      log(`${url} did not load as a normal page (${blocked})`);
+      await page.close();
+      for (let i = requests.length - 1; i >= 0; i--) if (requests[i].page === url) requests.splice(i, 1);
+      return { url, kind, status, error: `blocked or failed: ${blocked}` };
+    }
   }
   let consent = null;
   if (kind === 'home' && opts.consent) {
@@ -198,10 +208,24 @@ async function capture(url, kind) {
 log(`capturing ${startUrl.href}`);
 const home = await capture(startUrl.href, 'home');
 if (home.error && !home.links) {
-  log('homepage failed to load; aborting');
+  log(`the homepage didn't load as a normal page (${home.error}), so nothing was collected. If it opens in your own browser, the site is blocking automated browsers; --force collects it anyway.`);
   await browser.close();
   process.exit(2);
 }
+await mkdir(path.join(outDir, 'pages'), { recursive: true });
+
+// Search data runs alongside the rest of the capture. It starts only once the homepage has loaded, so a
+// blocked site costs nothing.
+const seoCreds = seoCredentials(env);
+let seoClient = null;
+const seoJob = !opts.seo
+  ? Promise.resolve({ skipped: 'disabled with --no-seo' })
+  : !seoCreds
+    ? Promise.resolve({ skipped: 'no DataForSEO credentials' })
+    : collectSeo({ client: (seoClient = createClient({ credentials: seoCreds, baseUrl: env.DATAFORSEO_BASE_URL })), domain: siteHost, locationCode: opts.seoLocation, languageCode: opts.seoLanguage })
+      .catch((e) => ({ skipped: `failed: ${e.message}` }));
+if (seoCreds && opts.seo) log(`fetching search data from DataForSEO (location ${opts.seoLocation})`);
+
 
 const pageTargets = new Map();
 if (opts.pages.length) opts.pages.forEach((p, i) => pageTargets.set(`page-${i + 1}`, new URL(p, startUrl).href));
@@ -245,13 +269,13 @@ const socials = [...new Set((home.links || []).filter((l) => { try { const u = n
 // can trip a site's rate limit.
 const jobs = opts.jobs
   ? await collectJobs({ context, origin: new URL(home.url || startUrl.href).origin, siteRoot, domain: siteHost, brands: brandCandidates({ domain: siteHost, homeTitle: home.title }), links: home.links || [], sitemapUrls: sitemapRaw.urls, outDir, log, slugify }).catch((e) => ({ status: 'error', error: e.message.split('\n')[0] }))
-  : { skipped: 'disabled with --no-jobs' };
+  : { skipped: skipped('--no-jobs') };
 
 // Content sample: newest posts plus top search-traffic posts (search data arrives in parallel).
 const seoForContent = await seoJob;
 const content = opts.content
   ? await collectContent({ context, origin: new URL(home.url || startUrl.href).origin, siteRoot, homePage: home, sitemapUrls: sitemapRaw.urls, seoPages: seoForContent.pages || [], recent: opts.contentPosts, log }).catch((e) => ({ source: 'error', error: e.message, posts: [] }))
-  : { skipped: 'disabled with --no-content', posts: [] };
+  : { skipped: skipped('--no-content'), posts: [] };
 if (!content.skipped) {
   await savePosts(content, outDir, slugify);
   content.cadence = cadence(content);
@@ -265,8 +289,12 @@ const ads = opts.ads
 const historyTargets = pages.filter((p) => !p.error && (p.kind === 'home' || p.kind === 'pricing')).map((p) => ({ kind: p.kind, url: p.url }));
 const history = opts.history
   ? await collectHistory({ browser, pages: historyTargets, matchVendor, years: opts.historyYears, outDir, log, slugify }).catch((e) => ({ error: e.message.split('\n')[0], pages: [] }))
-  : { skipped: 'disabled with --no-history' };
+  : { skipped: skipped('--no-history') };
 await browser.close();
+
+// The raw capture is saved before anything is worked out from it.
+await writeFile(path.join(outDir, 'network.json'), JSON.stringify(requests.map(({ post, ...r }) => r), null, 1));
+await writeFile(path.join(outDir, 'sitemap-urls.json'), JSON.stringify(sitemapRaw.urls));
 
 // ---------- Wappalyzer ----------
 
@@ -336,7 +364,14 @@ async function collectSitemap() {
   const subfolderCandidates = folders.filter((f) => /^(blog|resources|learn|academy|help|docs|support|news|insights|library|guides|community|stories)$/i.test(f)).slice(0, 6)
     .flatMap((f) => [`${origin}/${f}/sitemap_index.xml`, `${origin}/${f}/sitemap.xml`]);
   let subfoldersQueued = false;
+  // A site that refuses its sitemap files would otherwise be asked for every one in the index.
+  const started = Date.now();
+  let failures = 0;
+  let stoppedEarly = null;
   while ((queue.length || !subfoldersQueued) && fetched.length < 60 && urls.length < 50000) {
+    if (failures >= 20) stoppedEarly = `${failures} sitemap files in a row couldn't be read`;
+    else if (Date.now() - started > 180000) stoppedEarly = 'reading the sitemap files took over three minutes';
+    if (stoppedEarly) break;
     if (!queue.length) {
       subfoldersQueued = true;
       const covered = new Set(urls.map((x) => { try { return new URL(x.loc).pathname.split('/').filter(Boolean)[0]; } catch { return null; } }));
@@ -345,7 +380,8 @@ async function collectSitemap() {
     }
     const sm = queue.shift();
     const xml = await fetchText(sm);
-    if (!xml || !/<(urlset|sitemapindex)/i.test(xml)) continue;
+    if (!xml || !/<(urlset|sitemapindex)/i.test(xml)) { failures++; continue; }
+    failures = 0;
     fetched.push(sm);
     if (/<sitemapindex/i.test(xml)) {
       for (const m of xml.matchAll(/<loc>\s*(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?\s*<\/loc>/gi)) queue.push(m[1].trim());
@@ -353,13 +389,14 @@ async function collectSitemap() {
       for (const m of xml.matchAll(/<url>([\s\S]*?)<\/url>/gi)) {
         const loc = m[1].match(/<loc>\s*(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?\s*<\/loc>/i)?.[1]?.trim();
         const lastmod = m[1].match(/<lastmod>\s*(.*?)\s*<\/lastmod>/i)?.[1] || null;
-        if (loc) urls.push({ loc, lastmod });
+        // The file a URL came from says what it is: sitemap-posts.xml, sitemap-tags.xml.
+        if (loc) urls.push({ loc, lastmod, source: sm });
       }
     }
   }
   // Sitemap indexes often list the same URL more than once; count each URL once.
   const unique = [...new Map(urls.map((x) => [x.loc.replace(/\/$/, ''), x])).values()];
-  return { robotsFound: !!robots, sitemaps: fetched, truncated: queue.length > 0 || urls.length >= 50000, urls: unique, duplicatesRemoved: urls.length - unique.length, fetchStatuses };
+  return { robotsFound: !!robots, sitemaps: fetched, truncated: queue.length > 0 || urls.length >= 50000, stoppedEarly, urls: unique, duplicatesRemoved: urls.length - unique.length, fetchStatuses };
 }
 
 function summariseSitemap(sm) {
@@ -404,6 +441,7 @@ function summariseSitemap(sm) {
     fetchStatuses: sm.urls.length ? undefined : sm.fetchStatuses,
     sitemapsRead: sm.sitemaps.length,
     truncated: sm.truncated,
+    stoppedEarly: sm.stoppedEarly || undefined,
     sections: Object.entries(sections).sort((a, b) => b[1] - a[1]).slice(0, 20).map(([name, count]) => ({ name, count })),
     allSections: Object.keys(sections),
     locales: Object.entries(locales).sort((a, b) => b[1] - a[1]).map(([code, count]) => ({ code, count })),
@@ -422,10 +460,17 @@ const vendorHits = new Map();
 const unknownHosts = new Map();
 const fpTagging = new Map();
 const events = [];
+// One odd request shouldn't cost the whole run.
+let unreadable = 0;
 for (const r of requests) {
+  try { classify(r); } catch { unreadable++; }
+}
+if (unreadable) log(`${unreadable} requests couldn't be classified and were left out`);
+
+function classify(r) {
   let u;
-  try { u = new URL(r.url); } catch { continue; }
-  if (!/^https?:$/.test(u.protocol)) continue;
+  try { u = new URL(r.url); } catch { return; }
+  if (!/^https?:$/.test(u.protocol)) return;
   for (const t of firstPartyTagging(u)) {
     const key = `${t.name}|${u.hostname}`;
     if (!fpTagging.has(key)) fpTagging.set(key, { name: t.name, host: u.hostname, example: r.url.slice(0, 300) });
@@ -536,6 +581,7 @@ const captureRegion = { timezone: Intl.DateTimeFormat().resolvedOptions().timeZo
 const collected = {
   tool: 'behindsight',
   version: '0.1.0',
+  mode: opts.quick ? 'quick' : 'full',
   target: startUrl.href,
   domain: siteHost,
   capturedAt: new Date().toISOString(),
@@ -561,8 +607,6 @@ const collected = {
 };
 
 await writeFile(path.join(outDir, 'collected.json'), JSON.stringify(collected, null, 2));
-await writeFile(path.join(outDir, 'network.json'), JSON.stringify(requests.map(({ post, ...r }) => r), null, 1));
-await writeFile(path.join(outDir, 'sitemap-urls.json'), JSON.stringify(sitemapRaw.urls));
 await writeFile(path.join(outDir, 'summary.md'), buildSummary(collected));
 
 log(`done: ${pages.length} pages, ${requests.length} requests, ${stack.length} marketing technologies`);
@@ -575,7 +619,7 @@ function buildSummary(c) {
   L.push(`# Collected evidence: ${c.domain}`, '', `Capture region: browser time zone ${c.captureRegion?.timezone || '?'}${c.captureRegion?.regionalGoogleDomains?.length ? `, Google served ${c.captureRegion.regionalGoogleDomains.join(', ')}` : ''}. ${c.ads?.country ? `Ad libraries report ${c.ads.country}` : 'Ad libraries not checked'}; ${c.seo?.location ? `search data is for ${c.seo.location}` : 'no search data'}. Tags and consent can differ by region.`, '', `Captured ${c.capturedAt} · ${c.requestCount} network requests · consent banner: ${c.consent.banner ? `yes, clicked ${c.consent.clicked}` : 'none shown in this region (consent tools may still load and grant consent by default)'}`, '');
   L.push('## Pages captured', '');
   for (const p of c.pages) {
-    L.push(`### ${p.kind}: ${p.url}${p.error ? ` (FAILED: ${p.error})` : ''}`);
+    L.push(`### ${p.kind}: ${p.url}${p.error ? ` (FAILED: ${p.error})` : p.status && p.status !== 200 ? ` (HTTP ${p.status})` : ''}`);
     if (p.title) L.push(`- Title: ${p.title}`);
     if (p.description) L.push(`- Meta description: ${p.description}`);
     if (p.h1?.length) L.push(`- H1: ${p.h1.join(' | ')}`);
@@ -614,7 +658,7 @@ function buildSummary(c) {
   L.push('## Social profiles linked from the homepage', '', c.socials.join('\n') || 'none found', '');
   const s = c.sitemap;
   if (!s.totalUrls) L.push('## Sitemap', '', `No sitemap URLs collected. Fetch results: ${Object.entries(s.fetchStatuses || {}).map(([u, st]) => `${u} → ${st}`).join('; ')}`, '');
-  else L.push('## Sitemap', '', `${s.totalUrls} URLs from ${s.sitemapsRead} sitemap files${s.truncated ? ' (truncated)' : ''}. lastmod present on ${s.lastmodCoverage}% of URLs${s.lastmodSuspect ? ` WARNING: ${s.lastmodTopDayShare}% of dated URLs share one date, so the CMS likely rewrites lastmod on every build.` : ''}.`, '');
+  else L.push('## Sitemap', '', `${s.totalUrls} URLs from ${s.sitemapsRead} sitemap files${s.truncated ? ` (truncated${s.stoppedEarly ? `: ${s.stoppedEarly}` : ''})` : ''}. lastmod present on ${s.lastmodCoverage}% of URLs${s.lastmodSuspect ? ` WARNING: ${s.lastmodTopDayShare}% of dated URLs share one date, so the CMS likely rewrites lastmod on every build.` : ''}.`, '');
   L.push(`- Top sections: ${s.sections.map((x) => `${x.name} (${x.count})`).join(', ')}`);
   if (s.locales.length) L.push(`- Locales: ${s.locales.map((x) => `${x.code} (${x.count})`).join(', ')}`);
   L.push(`- Page patterns: ${Object.entries(s.patterns).filter(([, n]) => n).map(([k, n]) => `${k} ${n}`).join(', ') || 'none'}`);

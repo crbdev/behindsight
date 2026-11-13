@@ -2,26 +2,35 @@
 // Renders <dir>/findings.json (written by the agent) plus <dir>/collected.json
 // (written by collect.mjs) into a single self-contained <dir>/report.html.
 //
-// Usage: node scripts/render.mjs <teardown-dir>
+// Usage: node scripts/render.mjs <teardown-dir> [--show-region]
+//
+// --show-region adds where the capture ran from (browser time zone, regional Google domain) to the
+// method section. It is left out by default because reports get shared.
 
 import { readFile, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const SKILL_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const dir = process.argv[2];
+const dir = process.argv.slice(2).find((a) => !a.startsWith('--'));
+const showRegion = process.argv.includes('--show-region');
 if (!dir) {
-  console.error('Usage: node scripts/render.mjs <teardown-dir>');
+  console.error('Usage: node scripts/render.mjs <teardown-dir> [--show-region]');
   process.exit(1);
 }
 
 const collected = JSON.parse(await readFile(path.join(dir, 'collected.json'), 'utf8'));
-const findings = JSON.parse(await readFile(path.join(dir, 'findings.json'), 'utf8'));
+const findingsText = await readFile(path.join(dir, 'findings.json'), 'utf8');
+const findings = JSON.parse(findingsText);
 const css = await readFile(path.join(SKILL_DIR, 'templates/report.css'), 'utf8');
 const readOptional = async (f) => { try { return JSON.parse(await readFile(path.join(dir, f), 'utf8')); } catch { return null; } };
 const verify = await readOptional('verify.json');
 const review = await readOptional('review.json');
+// The citation check records which findings it ran on. If they changed since, the report says so.
+const verifyStale = !!verify?.summary?.findingsHash && verify.summary.findingsHash !== createHash('sha1').update(findingsText).digest('hex');
+if (verifyStale) console.error('Warning: findings.json changed after the citation check ran. Run verify.mjs again, then render again.');
 
 const SECTIONS = [
   { key: 'business_model', id: 'business-model', title: 'Business model' },
@@ -420,12 +429,13 @@ function historyHtml() {
 
 function methodHtml() {
   const c = collected.consent || {};
+  const skippedLayers = [['content', 'the content sample'], ['jobs', 'hiring'], ['history', 'changes over time']].filter(([key]) => collected[key]?.skipped).map(([, label]) => label);
   const consent = c.banner ? `A cookie banner was found and accepted (${esc(c.clicked)}), so tags that wait for consent are included.` : c.attempted === false ? 'Consent was not attempted, so tags that wait for consent may be missing.' : 'No cookie banner was shown in this region; consent tools can still load and grant consent by default.';
   const pages = collected.pages.map((p) => `<tr><td>${esc(p.kind)}</td><td>${link(p.url)}</td><td class="num">${p.error ? `<span class="chip unknown">failed</span>` : esc(p.status ?? '')}</td></tr>`).join('');
   const socials = collected.socials?.length ? `<h3>Social profiles linked from the homepage</h3><ul class="plain">${collected.socials.map((s) => `<li>${link(s)}</li>`).join('')}</ul>` : '';
   return `<section id="method"><div class="section-head"><h2>Method and sources</h2></div>
-<p class="note">Captured ${esc(new Date(collected.capturedAt).toUTCString())} with a desktop Chromium browser. ${fmt(collected.requestCount)} network requests were recorded across ${collected.pages.length} pages. ${consent} Tags and consent rules can differ by country, so results reflect the region the capture ran from${collected.captureRegion ? ` (browser time zone ${esc(collected.captureRegion.timezone)}${collected.captureRegion.regionalGoogleDomains?.length ? `; Google served regional domains ${esc(collected.captureRegion.regionalGoogleDomains.join(', '))}` : ''})` : ''}. Everything here comes from what the public site sends to a browser. Server-side systems, ad spend and revenue are not visible, and any statement about them is inferred.</p>
-${collected.ads?.skipped ? `<p class="note">Ad libraries were not checked (${esc(collected.ads.skipped)}).</p>` : ''}${collected.seo?.skipped ? `<p class="note">Search data was not collected (${esc(collected.seo.skipped)}). Add DataForSEO credentials to include it.</p>` : ''}${investigationsHtml()}${checksHtml()}<div class="table-wrap"><table><thead><tr><th>Page</th><th>URL</th><th>Status</th></tr></thead><tbody>${pages}</tbody></table></div>${socials}</section>`;
+<p class="note">Captured ${esc(new Date(collected.capturedAt).toUTCString())} with a desktop Chromium browser. ${fmt(collected.requestCount)} network requests were recorded across ${collected.pages.length} pages. ${consent} Tags and consent rules can differ by country, so results reflect the region the capture ran from${showRegion && collected.captureRegion ? ` (browser time zone ${esc(collected.captureRegion.timezone)}${collected.captureRegion.regionalGoogleDomains?.length ? `; Google served regional domains ${esc(collected.captureRegion.regionalGoogleDomains.join(', '))}` : ''})` : ''}. Everything here comes from what the public site sends to a browser. Server-side systems, ad spend and revenue are not visible, and any statement about them is inferred.</p>
+${collected.ads?.skipped ? `<p class="note">Ad libraries were not checked (${esc(collected.ads.skipped)}).</p>` : ''}${collected.seo?.skipped ? `<p class="note">Search data was not collected (${esc(collected.seo.skipped)}). Add DataForSEO credentials to include it.</p>` : ''}${skippedLayers.length ? `<p class="note">${collected.mode === 'quick' ? 'This was a quick run. ' : ''}Not collected: ${esc(skippedLayers.join(', '))}.</p>` : ''}${investigationsHtml()}${checksHtml()}<div class="table-wrap"><table><thead><tr><th>Page</th><th>URL</th><th>Status</th></tr></thead><tbody>${pages}</tbody></table></div>${socials}</section>`;
 }
 
 function investigationsHtml() {
@@ -445,11 +455,11 @@ function checksHtml() {
   const lines = [];
   if (verify?.summary) {
     const v = verify.summary;
-    lines.push(`<li><b>Citation check:</b> ${fmt(v.citations)} citations across ${fmt(v.claims)} claims were matched against the collected evidence${v.problems ? `, with ${v.problems} unresolved problem${v.problems === 1 ? '' : 's'}` : ', with none unresolved'}.</li>`);
+    lines.push(`<li><b>Citation check:</b> ${fmt(v.citations)} citations across ${fmt(v.claims)} claims were matched against the collected evidence${v.problems ? `, with ${v.problems} unresolved problem${v.problems === 1 ? '' : 's'}` : ', with none unresolved'}.${verifyStale ? ' The findings changed after this check ran, so it may not cover the final text.' : ''}</li>`);
   }
   if (review?.items?.length) {
     const changed = review.items.filter((i) => i.verdict && i.verdict !== 'supported').length;
-    lines.push(`<li><b>Independent fact-check:</b> a separate reviewer checked ${fmt(review.items.length)} items (the summary, highlights and every claim) against the evidence and flagged ${changed} for correction. Those were fixed before publishing.</li>`);
+    lines.push(`<li><b>Independent fact-check:</b> a separate reviewer checked ${fmt(review.items.length)} items (the summary, highlights and every claim) against the evidence and flagged ${changed} for correction before this report was built.</li>`);
   }
   return lines.length ? `<h3>Fact-checking</h3><ul class="plain">${lines.join('')}</ul>` : '';
 }

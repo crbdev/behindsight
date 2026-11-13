@@ -11,12 +11,12 @@
 //   node scripts/investigate.mjs jobs <dir> <careers-page-or-job-board-url>
 //   node scripts/investigate.mjs history <dir> <url> [--years 2]
 
-import { chromium } from 'playwright';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { extractEvents, extractPage, loadEnv, registrableDomain, siteHelpers, sleep } from './lib.mjs';
+import { launchBrowser } from './browser.mjs';
+import { extractEvents, extractPage, loadEnv, registrableDomain, reserveInvestigationId, siteHelpers, sleep, updateCollected } from './lib.mjs';
 import { collectAds } from './ads.mjs';
 import { cadence, collectContent, savePosts } from './content.mjs';
 import { collectJobs, findBoards } from './jobs.mjs';
@@ -47,18 +47,21 @@ for (let i = 0; i < rest.length; i++) {
 
 const collectedPath = path.join(dir, 'collected.json');
 const collected = JSON.parse(await readFile(collectedPath, 'utf8'));
-collected.investigations ||= [];
-const id = `inv-${collected.investigations.length + 1}`;
+// Investigations can run side by side: each reserves its own ID, and saves into a fresh read of collected.json.
+const { id, release } = await reserveInvestigationId(dir, collected.investigations || []);
 const invDir = path.join(dir, 'investigations');
-await mkdir(invDir, { recursive: true });
 const signatures = JSON.parse(await readFile(path.join(SKILL_DIR, 'scripts/signatures.json'), 'utf8'));
 const siteHost = collected.domain;
 const helpers = siteHelpers({ siteHost, siteRoot: registrableDomain(siteHost), signatures });
 const knownStack = new Set(collected.stack.map((s) => s.name));
 
-async function save(record, digest) {
-  collected.investigations.push({ id, at: new Date().toISOString(), ...record });
-  await writeFile(collectedPath, JSON.stringify(collected, null, 2));
+async function save(record, digest, change) {
+  const number = (x) => Number(String(x.id).replace(/^inv-/, '')) || 0;
+  await updateCollected(dir, (fresh) => {
+    fresh.investigations = [...(fresh.investigations || []), { id, at: new Date().toISOString(), ...record }].sort((a, b) => number(a) - number(b));
+    change?.(fresh);
+  });
+  await release();
   console.log(`${id} saved. Cite it with evidence type "investigation" and ref "${id}".\n`);
   console.log(digest);
 }
@@ -68,7 +71,7 @@ async function save(record, digest) {
 async function investigatePage() {
   const url = positional[0];
   if (!url) throw new Error('page needs a URL');
-  const browser = await chromium.launch();
+  const browser = await launchBrowser();
   const context = await browser.newContext({ userAgent: USER_AGENT, viewport: { width: 1440, height: 900 }, locale: 'en-US' });
   const page = await context.newPage();
   const requests = [];
@@ -218,7 +221,7 @@ async function investigateHost() {
   const payloads = [];
   const pageUrl = hits.find((h) => h.page)?.page;
   if (pageUrl) {
-    const browser = await chromium.launch();
+    const browser = await launchBrowser();
     const context = await browser.newContext({ userAgent: USER_AGENT, locale: 'en-US' });
     const page = await context.newPage();
     const cdp = await context.newCDPSession(page);
@@ -309,7 +312,7 @@ async function investigateSeo() {
 async function investigateAds() {
   const platform = flags.platform;
   if (!['google', 'meta', 'linkedin'].includes(platform) || !flags.name) throw new Error('ads needs --platform google|meta|linkedin and --name');
-  const browser = await chromium.launch();
+  const browser = await launchBrowser();
   const result = await collectAds({
     browser, userAgent: USER_AGENT, domain: siteHost, homeTitle: '', socials: collected.socials || [], country: flags.country || collected.ads?.country || 'US',
     outDir: dir, brands: [flags.name], platforms: [platform], filePrefix: `${id}-`, log: (m) => console.error('[ads]', m)
@@ -332,7 +335,7 @@ async function investigateContent() {
   const folder = new URL(indexUrl).pathname.split('/').filter(Boolean)[0];
   if (!folder) throw new Error('give the blog index URL with its folder, e.g. https://example.com/news');
   const sitemap = existsSync(path.join(dir, 'sitemap-urls.json')) ? JSON.parse(await readFile(path.join(dir, 'sitemap-urls.json'), 'utf8')) : [];
-  const browser = await chromium.launch();
+  const browser = await launchBrowser();
   const context = await browser.newContext({ userAgent: USER_AGENT, locale: 'en-US' });
   const content = await collectContent({
     context, origin: new URL(indexUrl).origin, siteRoot: registrableDomain(siteHost), homePage: { links: [] }, indexUrl, onlyFolder: folder,
@@ -341,11 +344,10 @@ async function investigateContent() {
   await browser.close();
   await savePosts(content, dir, helpers.slugify);
   content.cadence = cadence(content);
-  if (collected.content && !collected.contentPrevious) collected.contentPrevious = collected.content;
-  collected.content = content;
   const ok = content.posts.filter((p) => !p.error);
   await save({ tool: 'content', indexUrl, posts: ok.length }, `Content sample replaced: ${ok.length} posts from ${indexUrl} (source: ${content.source}). Read them in content/ and cite them with type "content".\n` +
-    ok.map((p) => `- ${p.published || '?'} | ${p.title} | ${p.words} words | ${p.file}`).join('\n'));
+    ok.map((p) => `- ${p.published || '?'} | ${p.title} | ${p.words} words | ${p.file}`).join('\n'),
+  (c) => { if (c.content && !c.contentPrevious) c.contentPrevious = c.content; c.content = content; });
 }
 
 // ---------- jobs: read a job board the collector missed ----------
@@ -356,19 +358,17 @@ async function investigateJobs() {
   const url = positional[0];
   if (!url) throw new Error('jobs needs a careers page or job board URL');
   const board = findBoards([url])[0] || null;
-  const browser = await chromium.launch();
+  const browser = await launchBrowser();
   const context = await browser.newContext({ userAgent: USER_AGENT, locale: 'en-US' });
   const jobs = await collectJobs({
     context, origin: new URL(url).origin, siteRoot: registrableDomain(siteHost), domain: siteHost, brands: [],
     links: board ? [] : [{ href: url, text: 'Careers' }], board, outDir: dir, slugify: helpers.slugify, log: (m) => console.error('[jobs]', m)
   });
   await browser.close();
-  if (collected.jobs && !collected.jobsPrevious) collected.jobsPrevious = collected.jobs;
-  collected.jobs = jobs;
   const digest = jobs.status === 'found'
     ? `Hiring data replaced: ${jobs.openRoles} open roles on ${jobs.ats} (${jobs.boardUrl}). Marketing ${jobs.byRole.marketing}, sales ${jobs.byRole.sales}, customer ${jobs.byRole.customer}. Posts in jobs/; cite them with type "jobs".`
     : `No job board read: ${jobs.status}. ${jobs.note || jobs.error || ''}`;
-  await save({ tool: 'jobs', url, status: jobs.status }, digest);
+  await save({ tool: 'jobs', url, status: jobs.status }, digest, (c) => { if (c.jobs && !c.jobsPrevious) c.jobsPrevious = c.jobs; c.jobs = jobs; });
 }
 
 // ---------- history: Wayback Machine copies of another page ----------
@@ -376,7 +376,7 @@ async function investigateJobs() {
 async function investigateHistory() {
   const url = positional[0];
   if (!url) throw new Error('history needs a page URL');
-  const browser = await chromium.launch();
+  const browser = await launchBrowser();
   const kind = `${id}-${helpers.slugify(url)}`;
   const h = await collectHistory({ browser, pages: [{ kind, url }], matchVendor: helpers.matchVendor, years: Number(flags.years) || 2, outDir: dir, slugify: helpers.slugify, log: (m) => console.error('[history]', m) });
   await browser.close();
@@ -388,11 +388,13 @@ async function investigateHistory() {
 const run = { page: investigatePage, host: investigateHost, seo: investigateSeo, ads: investigateAds, content: investigateContent, jobs: investigateJobs, history: investigateHistory }[command];
 if (!run) {
   console.error(`Unknown command "${command}". Use page, host, seo, ads, content, jobs or history.`);
+  await release();
   process.exit(1);
 }
 try {
   await run();
 } catch (e) {
   console.error(`Investigation failed: ${e.message}`);
+  await release();
   process.exit(1);
 }

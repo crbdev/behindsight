@@ -32,6 +32,8 @@ export function nameMatch(name, brands) {
   }
   return best;
 }
+// Google reports ad counts as a range; an exact count comes back with both ends equal.
+export const countRange = (low, high) => [...new Set([low, high].filter(Boolean).map(String))].join('–');
 const onSite = (url, domain) => { try { return registrableDomain(new URL(url).hostname) === registrableDomain(domain); } catch { return false; } };
 const isoDay = (s) => (s ? new Date(`${s} UTC`).toISOString().slice(0, 10) : null);
 
@@ -119,7 +121,7 @@ async function googleAdsInner({ context, domain, brands, country, outDir, region
     a.adsInSample++;
     onDomain.set(c['1'], a);
   }
-  const domainTotal = [domainResults['4'], domainResults['5']].filter(Boolean).join('–') || null;
+  const domainTotal = countRange(domainResults['4'], domainResults['5']) || null;
   const candidates = [...onDomain.values()].filter((a) => nameMatch(a.name, brands) !== 'none');
 
   // Accounts named exactly like the brand, in case the company's ads were crowded out of the domain sample.
@@ -128,7 +130,7 @@ async function googleAdsInner({ context, domain, brands, country, outDir, region
     const s = await googleRpc('SearchService/SearchSuggestions', { 1: q, 2: 10, 3: 10, 4: [region], 5: { 1: 1 } });
     for (const item of s['1'] || []) {
       const a = item['1'];
-      if (a && nameMatch(a['1'], brands) === 'exact' && !candidates.some((c) => c.id === a['2'])) candidates.push({ id: a['2'], name: a['1'], country: a['3'], adsRange: [a['4']?.['2']?.['1'], a['4']?.['2']?.['2']].filter(Boolean).join('–') });
+      if (a && nameMatch(a['1'], brands) === 'exact' && !candidates.some((c) => c.id === a['2'])) candidates.push({ id: a['2'], name: a['1'], country: a['3'], adsRange: countRange(a['4']?.['2']?.['1'], a['4']?.['2']?.['2']) });
     }
   }
 
@@ -136,7 +138,7 @@ async function googleAdsInner({ context, domain, brands, country, outDir, region
   const verified = [];
   for (const cand of candidates.slice(0, 6)) {
     const r = await googleRpc('SearchService/SearchCreatives', { 2: 40, 3: filters({ 12: { 1: domain, 2: true }, 13: { 1: [cand.id] } }), 7: { 1: 1, 2: 0, 3: region } });
-    if ((r['1'] || []).length) verified.push({ ...cand, match: `name ${nameMatch(cand.name, brands) === 'exact' ? 'matches' : 'starts with'} the brand; ads link to ${domain}`, adsToDomain: [r['4'], r['5']].filter(Boolean).join('–') || String(r['1'].length) });
+    if ((r['1'] || []).length) verified.push({ ...cand, match: `name ${nameMatch(cand.name, brands) === 'exact' ? 'matches' : 'starts with'} the brand; ads link to ${domain}`, adsToDomain: countRange(r['4'], r['5']) || String(r['1'].length) });
   }
   // Other accounts linking to the domain, biggest first. On platforms that host customer pages
   // (booking links, storefronts) these are mostly customers.
@@ -159,7 +161,7 @@ async function googleAdsInner({ context, domain, brands, country, outDir, region
       const req = { 2: 100, 3: filters({ 13: { 1: [adv.id] } }), 7: { 1: 1, 2: 0, 3: region } };
       if (token) req[4] = token;
       const r = await googleRpc('SearchService/SearchCreatives', req);
-      if (page === 0) adv.adsTotal = [r['4'], r['5']].filter(Boolean).join('–') || null;
+      if (page === 0) adv.adsTotal = countRange(r['4'], r['5']) || null;
       for (const c of r['1'] || []) {
         creatives.push({
           advertiser: adv.name, advertiserId: c['1'], creativeId: c['2'], format: GOOGLE_FORMATS[c['4']] || `format ${c['4']}`,
@@ -256,14 +258,25 @@ async function googleSamples({ context, creatives, outDir, filePrefix = '' }) {
 
 // ---------- Meta Ad Library ----------
 
+// "Not found" is only true when the page search answered. When it never answered (a rate limit, a
+// changed page), the library wasn't checked, and saying the company has no page would be a guess.
+export function metaNoMatch({ answered, searched }) {
+  if (answered) return { status: 'not found', searched, note: 'No Facebook page matching the brand appeared in the Ad Library search.' };
+  return { status: 'error', searched, error: "the Ad Library page search didn't answer", note: `Meta's Ad Library page search returned nothing at all, so this run can't say whether the company has a page there. Check again with investigate.mjs ads --platform meta --name "<brand>".` };
+}
+
 async function metaAds({ context, domain, brands, socials, country, outDir, log, filePrefix = '' }) {
   log('reading Meta Ad Library');
   const page = await context.newPage();
   const suggestions = [];
+  let answered = false;
   page.on('response', async (r) => {
     if (!/api\/graphql/.test(r.url())) return;
     if (!/AdLibraryTypeaheadSuggestion/.test(r.request().postData() || '')) return;
-    try { suggestions.push(...(JSON.parse(await r.text())?.data?.ad_library_main?.typeahead_suggestions?.page_results || [])); } catch {}
+    try {
+      const results = JSON.parse(await r.text())?.data?.ad_library_main?.typeahead_suggestions?.page_results;
+      if (Array.isArray(results)) { answered = true; suggestions.push(...results); }
+    } catch {}
   });
   await page.goto(`https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=${country}&q=${encodeURIComponent(brands[0])}&search_type=keyword_unordered&media_type=all`, { waitUntil: 'domcontentloaded', timeout: 45000 });
   await sleep(5000);
@@ -273,6 +286,12 @@ async function metaAds({ context, domain, brands, socials, country, outDir, log,
     await box.fill('');
     await box.type(q, { delay: 90 });
     await sleep(3500);
+  }
+  // The search can be slow to answer; give it one more, slower try before calling it unanswered.
+  if (!answered) {
+    await box.fill('');
+    await box.type(brands[0], { delay: 140 });
+    await sleep(7000);
   }
 
   // Candidate pages, strongest first: linked from the company's site, then verified with the brand's
@@ -289,7 +308,7 @@ async function metaAds({ context, domain, brands, socials, country, outDir, log,
   ].filter(({ s }) => !seen.has(s.page_id) && seen.add(s.page_id)).slice(0, 3);
   if (!candidates.length) {
     await page.close();
-    return { status: 'not found', searched: brands, note: 'No Facebook page matching the brand appeared in the Ad Library search.' };
+    return metaNoMatch({ answered, searched: brands });
   }
 
   const rejected = [];
