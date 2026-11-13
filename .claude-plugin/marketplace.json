@@ -1,0 +1,17 @@
+{
+  "name": "behindsight",
+  "owner": {
+    "name": "Casey Burridge",
+    "url": "https://caseyrb.com"
+  },
+  "metadata": {
+    "description": "Behindsight: an agent skill that reverse-engineers a company's marketing from its public website."
+  },
+  "plugins": [
+    {
+      "name": "behindsight",
+      "source": "./",
+      "description": "See what's behind any company's website: reverse-engineer its marketing strategy, business model and marketing stack into an evidence-labeled HTML report."
+    }
+  ]
+}
