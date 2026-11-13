@@ -1,0 +1,27 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      # The end-to-end tests drive the collector against a local test site, so they need the browser.
+      # Wappalyzer isn't needed: those tests run with --no-wappalyzer.
+      - name: Install the skill's dependencies and browser
+        working-directory: skills/behindsight
+        run: |
+          npm ci --no-fund --no-audit
+          npx playwright install --with-deps chromium
+      - name: Run the tests
+        run: node --test tests/*.test.mjs
