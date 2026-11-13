@@ -1,6 +1,6 @@
 ---
 name: behindsight
-description: Reverse-engineer a company's marketing strategy, business model and marketing tech stack from its public website, and deliver an evidence-labeled HTML report. Captures key pages, records every pixel and tag the site loads (with public account IDs and tracking events), runs Wappalyzer, reads the sitemap, checks the public ad libraries (Google Ads Transparency Center, Meta Ad Library, LinkedIn Ad Library) for the company's own ads and, with optional DataForSEO credentials, adds organic search data (top keywords, top pages, traffic by site section, search competitors), then labels each conclusion as seen, inferred or unknown. Use when someone asks to "tear down", "reverse-engineer", "analyze the marketing of" or "figure out the strategy behind" a company or domain, or asks what marketing stack, pixels or funnel a site uses.
+description: Reverse-engineer a company's marketing strategy, business model and marketing tech stack from its public website, and deliver an evidence-labeled HTML report. Captures key pages, records every pixel and tag the site loads (with public account IDs and tracking events), runs Wappalyzer, reads the sitemap, samples the blog, reads open roles on public job boards and Wayback Machine copies of the homepage and pricing page, checks the public ad libraries (Google Ads Transparency Center, Meta Ad Library, LinkedIn Ad Library) for the company's own ads and, with optional DataForSEO credentials, adds organic search data (top keywords, top pages, traffic by site section, search competitors), then labels each conclusion as seen, inferred or unknown. Use when someone asks to "tear down", "reverse-engineer", "analyze the marketing of" or "figure out the strategy behind" a company or domain, or asks what marketing stack, pixels or funnel a site uses.
 ---
 
 # Behindsight
@@ -13,7 +13,13 @@ The scripts collect evidence the same way on every run. Your job is the reading:
 
 ### 1. Check setup
 
-From this skill's folder, check that `node_modules/playwright` and `vendor/wappalyzer` exist. If either is missing, tell the user that setup downloads Playwright's Chromium (about 600 MB) and clones HTTP Archive's Wappalyzer fork, and ask before running:
+Run the setup check:
+
+```sh
+node scripts/check.mjs
+```
+
+It tests Node, Playwright, its Chromium browser and Wappalyzer, and says whether the optional search credentials are set. If it reports something missing, tell the user that setup downloads Playwright's Chromium (about 600 MB) and clones HTTP Archive's Wappalyzer fork, and ask before running:
 
 ```sh
 sh scripts/setup.sh
@@ -31,7 +37,7 @@ Run every script from the user's current working directory, calling it by its pa
 node scripts/collect.mjs <domain> [--out <dir>]
 ```
 
-It takes 1 to 3 minutes. It prints the output folder, by default `./teardowns/<domain>-<date>/`. Useful flags:
+A full run takes about 6 to 8 minutes and a quick run about 3, so run it in the background or give the command a 10-minute timeout. It prints the output folder, by default `./teardowns/<domain>-<date>/`. Useful flags:
 
 - `--pages <url,url>` overrides page discovery when the defaults miss the pricing or signup page.
 - `--max-pages <n>` changes how many pages are captured (default 7, including the homepage).
@@ -40,8 +46,9 @@ It takes 1 to 3 minutes. It prints the output folder, by default `./teardowns/<d
 - `--no-ads` skips the ad libraries. `--ads-country <code>` picks the country they report on (default `US`).
 - `--no-seo` skips DataForSEO even when credentials are set.
 - `--seo-location <code>` and `--seo-language <code>` pick the Google market (default `2840` United States, `en`). Use the company's main market.
+- `--quick` skips the content sample, hiring and history (see Quick mode below).
 
-If the homepage fails to load (bot protection, a geo block), say so and stop. Don't write a report from guesses.
+The collector stops with exit code 2 when the homepage answers with an error status or a bot-challenge page (bot protection, a geo block). Say so and stop. Don't write a report from guesses. `--force` collects such a page anyway; use it only when the user confirms the page loads normally for them. Other pages that are blocked show as FAILED in the summary and aren't evidence.
 
 ### 3. Read the evidence
 
@@ -82,6 +89,7 @@ Rules:
 - Spend effort where it changes a conclusion. Around 3 to 8 investigations is typical; stop when new runs stop adding evidence.
 - `seo` runs cost a few cents each on the user's DataForSEO account.
 - Look at the screenshot each `page` run saves in `investigations/`.
+- Investigations can run side by side. Each gets its own ID.
 
 ### 5. Write findings.json
 
@@ -133,12 +141,26 @@ Apply every fix it marks as overstated, mislabeled, unsupported or contradicted,
 node scripts/render.mjs <output-folder>
 ```
 
-The renderer validates `findings.json` and lists every problem if it fails. Fix them and rerun. It writes `report.html`, a single self-contained file. Open it for the user (`open` on macOS, `xdg-open` on Linux) and give them the path.
+The renderer validates `findings.json` and lists every problem if it fails. Fix them and rerun. If it warns that the findings changed after the citation check, run `verify.mjs` again and render again. It writes `report.html`, a single self-contained file. Open it for the user (`open` on macOS, `xdg-open` on Linux) and give them the path.
+
+Reports get shared, so the report leaves out where the capture ran from (the browser's time zone and the regional Google domain it was served). Add `--show-region` when the user wants that in the method section.
 
 In your reply, give the two or three most interesting conclusions in plain sentences, plus anything that limited the run (failed pages, a consent wall, a missing sitemap).
 
+## Quick mode
+
+Use it when the user asks for a quick or cheap look, or only wants the stack, the ads and the positioning.
+
+- Collect with `--quick`. There is no content sample, hiring or history to read.
+- Read `summary.md`, the ad samples, and the homepage and pricing pages.
+- Run at most 3 investigations.
+- Write 3 or 4 claims per section, and leave out `content_strategy` and `history`.
+- Keep the citation check and the independent fact-check (steps 6 and 7). They are what make the report worth trusting, so a quick run doesn't skip them.
+
+Say in your hand-over that it was a quick run and what it left out. The report's method section says so too.
+
 ## Scope
 
-Behindsight reads public sources only: the company's website, the public ad libraries (Google, Meta, LinkedIn) and, with credentials, DataForSEO. Social accounts, job posts, review sites and the Pinterest, Reddit and TikTok ad libraries are not collected yet.
+Behindsight reads public sources only: the company's website, public job boards, the Wayback Machine, the public ad libraries (Google, Meta, LinkedIn) and, with credentials, DataForSEO. Social accounts, review sites and the Pinterest, Reddit and TikTok ad libraries are not collected yet.
 
 Only public pages are captured. Don't log in, submit forms, or start trials or checkouts.

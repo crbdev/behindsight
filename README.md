@@ -24,7 +24,7 @@ The agent reads all of this, then investigates whatever the first pass missed or
 
 ## Install
 
-Requires Node 20 or later and git. Setup checks your Node version and tells you how to install or update it if needed.
+Requires Node 20 or later and git, on macOS or Linux. Setup is a shell script, so on Windows run it inside WSL (untested). Setup checks your Node version and tells you how to install or update it if needed.
 
 ```sh
 git clone https://github.com/crbdev/behindsight.git
@@ -33,6 +33,8 @@ sh scripts/setup.sh
 ```
 
 Setup installs Playwright with Chromium (about 600 MB of browser downloads) and fetches the latest Wappalyzer fork into `vendor/`. It test-runs Wappalyzer and falls back to a known-good version if the latest doesn't work. Rerun setup now and then to pick up new detections.
+
+To check an install at any time, run `node scripts/check.mjs`. It tests Node, Playwright, the browser and Wappalyzer, and tells you when setup needs to run again. That can happen without you touching Behindsight: a Playwright update elsewhere on your machine can remove the browser it uses.
 
 ### Optional: search data
 
@@ -51,25 +53,37 @@ Environment variables work too, and so does `~/.config/dataforseo/.env`, the fil
 
 ### Use it as a skill
 
-To use it as a Claude Code skill, copy or symlink `skills/behindsight` into `~/.claude/skills/` (or a project's `.claude/skills/`). Then ask: "Do a marketing teardown of example.com."
+In Claude Code 2.1.275 or later, install it as a plugin:
+
+```
+/plugin install behindsight --marketplace crbdev/behindsight
+```
+
+Or clone the repo and copy or symlink `skills/behindsight` into `~/.claude/skills/` (or a project's `.claude/skills/`). Then ask: "Do a marketing teardown of example.com." The skill checks its install first and asks before it runs setup.
 
 A full run with Claude Opus takes 25 to 40 minutes of agent work and uses roughly 6 to 12 million input tokens (almost all cached) and 70,000 to 100,000 output tokens: about $10 to $15 at API prices in tests on linear.app and zapier.com, plus about $0.10 of DataForSEO if enabled. Bigger sites with more to investigate cost more.
+
+For a shorter run, ask for a quick teardown. It skips the content sample, hiring and history, and keeps both accuracy checks. Quick runs haven't been benchmarked yet, so the figures above are for full runs.
 
 ## Run the scripts directly
 
 ```sh
+node scripts/check.mjs                        # is everything installed?
 node scripts/collect.mjs example.com          # writes ./teardowns/example.com-<date>/
+node scripts/collect.mjs example.com --quick  # no content sample, hiring or history
 node scripts/collect.mjs example.com --seo-location 2826   # UK search data
 # write findings.json (see references/report-schema.md)
 node scripts/investigate.mjs page teardowns/example.com-<date> https://example.com/pricing --click "Monthly"   # follow-up evidence
 node scripts/verify.mjs teardowns/example.com-<date>   # citation check
 # independent review: references/review-prompt.md
-node scripts/render.mjs teardowns/example.com-<date>
+node scripts/render.mjs teardowns/example.com-<date>   # add --show-region to say where the capture ran from
 ```
 
 ## Accuracy
 
-Every report goes through two checks before it renders: a script matches each citation to the collected evidence, and a separate reviewer agent fact-checks every claim. On the Calendly example:
+Every report goes through two checks before it renders: a script matches each citation to the collected evidence, and a separate reviewer agent fact-checks every claim.
+
+The script's check is mechanical. It confirms that the quoted text, tools, IDs and numbers a claim cites are in the evidence. It can't tell whether the claim reads them correctly, and a number can match the data by chance. Judging that is the reviewer's job. On the Calendly example:
 
 | Round | What changed before it | Items flagged by the reviewer |
 |---|---|---|
@@ -88,7 +102,9 @@ All flagged items were corrected before the example was published. Round 3 cover
 Behindsight reads what any visitor's browser receives: public pages, public ad libraries and, with your own account, DataForSEO. It doesn't log in, submit forms, start trials or check out, and its investigation tool refuses clicks that could.
 
 - The ad library step reads the libraries' public websites, not official APIs. Google, Meta and LinkedIn each have terms on automated access. You're responsible for using Behindsight in line with them, and with the terms of the sites you analyze. Skip ad libraries with `--no-ads`.
-- Keep volumes low. One run loads about 7 pages plus a handful of ad library and sitemap requests. Don't point it at many sites in a loop.
+- It browses like a visitor, with a regular Chrome user agent, and reads `robots.txt` only to find the sitemap. It doesn't check `Disallow` rules, so check them yourself for sites where that matters to you.
+- Keep volumes low. A full run loads about 7 pages, 20 to 30 blog posts, a careers page and the sitemap files from the site, plus a handful of ad library, job board and Wayback Machine requests. `--quick` skips the blog posts and the careers page. Don't point it at many sites in a loop.
+- Reports get shared, so they leave out where the capture ran from. `render.mjs --show-region` adds the browser's time zone and the regional Google domain to the method section.
 - Reports describe what a company's public website and ads show. Inferences are labeled as such and can be wrong, so treat them as a starting point, not as fact about the company.
 
 ## Limits
@@ -100,7 +116,7 @@ Behindsight reads what any visitor's browser receives: public pages, public ad l
 - An ad account counts as the company's only when its name matches the brand and its ads link to the company's domain (or the company's site links to it). Short brand names collide often; when no account can be tied to the company, the report says so instead of guessing.
 - An installed pixel shows a channel is set up. It doesn't show how much is spent.
 - Tags and consent rules vary by country. Results reflect where you run it from.
-- Some sites block headless browsers. The collector stops rather than guessing.
+- Some sites block headless browsers. When the homepage answers with an error or a bot check, the collector stops rather than guessing. `--force` overrides that.
 
 ## Roadmap
 
@@ -109,6 +125,14 @@ Behindsight reads what any visitor's browser receives: public pages, public ad l
 - Funnel tracing with [REA](https://github.com/morluto/rea): follow a signup click to every request it fires
 - Fewer first-draft errors: have the collector label installed ad tags as "installed" (not spend) unless an ad library confirms ads, and carry the basis of search shares ("of the top 100 pages") into the numbers themselves
 - A subagent that reads the sampled blog posts and returns labels and themes, so the main agent's context stays lean and runs cost less
+
+## Development
+
+```sh
+node --test tests/*.test.mjs
+```
+
+The unit tests need nothing installed. The end-to-end tests drive the collector against a local test site, and are skipped until setup has run. One test renders `examples/calendly.com` and compares it with the report in the repo, so rerun `render.mjs` on the example after an intended change to the renderer.
 
 ## License
 
